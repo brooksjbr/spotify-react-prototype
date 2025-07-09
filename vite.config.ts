@@ -9,7 +9,10 @@ export default defineConfig({
   build: {
     sourcemap: true,
   },
-  plugins: [react(), EnvironmentPlugin(['REACT_APP_TEXT'])],
+  plugins: [
+    react(),
+    EnvironmentPlugin({ REACT_APP_TEXT: 'My Spotify Listening Habits' }),
+  ],
   publicDir: 'public',
   server: {
     host: true,

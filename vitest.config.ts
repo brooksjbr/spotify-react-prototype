@@ -7,7 +7,11 @@ export default defineConfig(async () => {
   const tailwindPostcss = await import('@tailwindcss/postcss')
 
   return {
-    plugins: [EnvironmentPlugin(['REACT_APP_TEXT']) as any],
+    plugins: [
+      EnvironmentPlugin({
+        REACT_APP_TEXT: 'My Spotify Listening Habits',
+      }) as any,
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),

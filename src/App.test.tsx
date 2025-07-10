@@ -5,9 +5,10 @@ import App from './App'
 
 // Mock all the page components to avoid external dependencies
 vi.mock('./pages/Index', () => ({
-  default: () => <div data-testid="index-page">My Spotify Listening Habits</div>,
+  default: () => (
+    <div data-testid="index-page">My Spotify Listening Habits</div>
+  ),
 }))
-
 
 vi.mock('./pages/Notfound', () => ({
   default: () => <div data-testid="notfound-page">Not Found Page</div>,

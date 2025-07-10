@@ -2,7 +2,7 @@
 
 ### Description
 
-This is prototype app built in React using typescript. Incorporating the Spotify web SDK, to retrieve and render a spotify user profile.
+This is prototype app built in React using typescript. Incorporating the Spotify web SDK, to retrieve and render a spotify user profile and the first page of the user's followed artists.
 
 ### **Tech Stack:**
 
@@ -58,7 +58,7 @@ pnpm remove:tailwind # remove TailwindCSS
 
 - Vitest provides nice mocking for testing page components and external APIs
 
-- First time using pnpm, the command line is similar to yarn. pnpm stands for proficient node package management, it intend to cut down of duplicate packages among local applications.
+- First time using pnpm, the command line is similar to yarn. pnpm stands for proficient node package manager, the intend purpose of pnpm is to share packages among local projects reducing the overhead storing commonly used packages.
 
 - Using a app template to bootstrap the project was really helpful getting started quickly
 

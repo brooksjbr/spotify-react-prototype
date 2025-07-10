@@ -1,4 +1,4 @@
-import type { UserProfile } from '@spotify/web-api-ts-sdk'
+import type { UserProfile, Artist } from '@spotify/web-api-ts-sdk'
 import {
   AuthorizationCodeWithPKCEStrategy,
   Scopes,
@@ -53,7 +53,7 @@ export const useCurrentUser = (sdk: SpotifyApi | null) => {
 
   useEffect(() => {
     if (!sdk) {
-      return // Don't fetch if SDK is not available
+      return
     }
 
     const fetchUserProfile = async () => {
@@ -83,4 +83,44 @@ export const useCurrentUser = (sdk: SpotifyApi | null) => {
   }, [sdk]) // Remove 'user' from dependency array to prevent infinite loops
 
   return { user, loading, error }
+}
+
+export const useFollowedArtists = (sdk: SpotifyApi | null) => {
+  const [artists, setArtists] = useState<Artist[] | null>(null)
+  const [loading, setLoading] = useState<boolean>(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!sdk) {
+      return
+    }
+
+    const fetchFollowedArtists = async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        if (sdk && sdk.currentUser) {
+          const followedArtists = await sdk.currentUser.followedArtists()
+          // The API returns { artists: { items: Artist[] } }
+          setArtists(followedArtists.artists.items)
+        } else {
+          throw new Error(
+            'Spotify SDK is not initialized or currentUser is unavailable',
+          )
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error occurred'
+        setError(errorMessage)
+        console.error('Spotify Followed Artists Error: ' + error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchFollowedArtists()
+  }, [sdk])
+
+  return { artists, loading, error }
 }

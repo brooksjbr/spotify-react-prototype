@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router'
 
 import Layout from './components/Layout/Layout'
+import Dashboard from './pages/Dashboard'
 import Index from './pages/Index'
 import Notfound from './pages/Notfound'
 
@@ -10,6 +11,14 @@ const router = createBrowserRouter([
     element: (
       <Layout>
         <Index />
+      </Layout>
+    ),
+  },
+  {
+    path: '/dashboard',
+    element: (
+      <Layout>
+        <Dashboard />
       </Layout>
     ),
   },

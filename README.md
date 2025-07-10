@@ -9,8 +9,10 @@ This is prototype app built in React, integrating with the Spotify typescript SD
 - ⚛️ React 18 with TypeScript
 - ⚡ Vite for fast development and building
 - 🎨 Tailwind CSS for styling
-- 🧪 Vitest + Jest for testing
+- 🧪 Vitest for testing
+- 🧪 @testing-library/react for DOM testing
 - 📦 pnpm for package management
+- 🐙 GitHub Workflow for lint, test, build automation
 
 This project was bootstrapped using the [create-react-app-vite](https://github.com/laststance/create-react-app-vite) template, providing a modern development experience with hot module replacement and optimized builds.
 
@@ -41,7 +43,9 @@ pnpm serve           # launch server for production bundle in local
 pnpm remove:tailwind # remove TailwindCSS
 ```
 
-# Notes:
+# Learning Notes:
 
-The act extension for the GH command line tool is helpful testing workflows locally prior to PRs. Requires Docker.
-https://nektosact.com/introduction.html
+- The act extension for the GH command line tool is helpful testing workflows locally prior to PRs. Requires Docker.
+  https://nektosact.com/introduction.html
+
+- Vitest provides nice mocking for testing page components

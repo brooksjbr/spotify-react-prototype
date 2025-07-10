@@ -3,11 +3,15 @@ import { vi } from 'vitest'
 
 import App from './App'
 
-// Mock all the page components to avoid external dependencies
+// Mock page components
 vi.mock('./pages/Index', () => ({
   default: () => (
     <div data-testid="index-page">My Spotify Listening Habits</div>
   ),
+}))
+
+vi.mock('./pages/Dashboard', () => ({
+  default: () => <div data-testid="dashboard-page">Dashboard Page</div>,
 }))
 
 vi.mock('./pages/Notfound', () => ({

@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import { vi } from 'vitest'
 
+import { useSpotify, useCurrentUser } from '../../hooks/useSpotify'
+
 import Dashboard from './index'
 
 // Mock the hooks
@@ -15,8 +17,6 @@ vi.mock('../../components/Box', () => ({
     <div data-testid="box">{children}</div>
   ),
 }))
-
-import { useSpotify, useCurrentUser } from '../../hooks/useSpotify'
 
 const mockUseSpotify = useSpotify as ReturnType<typeof vi.fn>
 const mockUseCurrentUser = useCurrentUser as ReturnType<typeof vi.fn>

@@ -12,11 +12,17 @@ This is prototype app built in React using typescript. Incorporating the Spotify
 - 🧪 Vitest for testing
 - 🧪 @testing-library/react for DOM testing
 - 📦 pnpm for package management
-- 🐙 GitHub Workflow for lint, test, build automation
+- :octocat: GitHub Workflow for lint, test, build automation
 - 🎵 @spotify/web-api-ts-sdk for Spotify API integration
+- 🫙 Docker for Github workflow testing
 
-This project was bootstrapped using the [create-react-app-vite](https://github.com/laststance/create-react-app-vite) template, providing a modern development experience with hot module replacement and optimized builds.
-To run this app locally you need an spotify client id and register an app with spotify, here's where to start that process. https://developer.spotify.com/
+### Project details and external requirements
+
+- This project was bootstrapped using the [create-react-app-vite](https://github.com/laststance/create-react-app-vite) template, providing a modern development experience with hot module replacement and optimized builds.
+
+- You'll need a preimum Spotify account to login with.
+
+- To run this app locally you need an spotify client id and register an app with spotify, here's where to start that process. https://developer.spotify.com/
 
 ### pnpm
 
@@ -57,4 +63,3 @@ pnpm remove:tailwind # remove TailwindCSS
 - Using a app template to bootstrap the project was really helpful getting started quickly
 
 - First time using tailwind, it was fine. No strong opinion at this point.
-

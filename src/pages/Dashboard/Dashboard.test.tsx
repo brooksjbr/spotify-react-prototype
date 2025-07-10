@@ -41,6 +41,25 @@ vi.mock('../../components/UserProfile/UserProfile', () => ({
   ),
 }))
 
+// Updated mock for ArtistGrid to handle empty state
+vi.mock('../../components/ArtistGrid/ArtistGrid', () => ({
+  default: ({ artists }: { artists: any[] }) => (
+    <div data-testid="artist-grid">
+      {artists.length === 0 ? (
+        <div>
+          <h2>Artists You Follow</h2>
+          <p>You're not following any artists yet.</p>
+        </div>
+      ) : (
+        <div>
+          <h2>Artists You Follow ({artists.length})</h2>
+          <span>Artists: {artists.length}</span>
+        </div>
+      )}
+    </div>
+  ),
+}))
+
 const mockUseSpotify = useSpotify as ReturnType<typeof vi.fn>
 const mockUseCurrentUser = useCurrentUser as ReturnType<typeof vi.fn>
 const mockUseFollowedArtists = useFollowedArtists as ReturnType<typeof vi.fn>
@@ -186,7 +205,7 @@ describe('Dashboard Component', () => {
     ).toBeInTheDocument()
   })
 
-  test('renders user profile and followed artists when data is available', () => {
+  test('renders user profile and artist grid when data is available', () => {
     const mockSdk = { currentUser: { profile: vi.fn() } }
     const mockUser = {
       display_name: 'John Doe',
@@ -196,20 +215,8 @@ describe('Dashboard Component', () => {
       images: [{ url: 'http://example.com/profile.jpg' }],
     }
     const mockArtists = [
-      {
-        id: '1',
-        name: 'Artist One',
-        genres: ['rock', 'alternative'],
-        followers: { total: 1000000 },
-        images: [{ url: 'http://example.com/artist1.jpg' }],
-      },
-      {
-        id: '2',
-        name: 'Artist Two',
-        genres: ['pop', 'electronic'],
-        followers: { total: 500000 },
-        images: [{ url: 'http://example.com/artist2.jpg' }],
-      },
+      { id: '1', name: 'Artist One' },
+      { id: '2', name: 'Artist Two' },
     ]
 
     mockUseSpotify.mockReturnValue({ sdk: mockSdk })
@@ -235,34 +242,10 @@ describe('Dashboard Component', () => {
     expect(screen.getByTestId('user-profile')).toBeInTheDocument()
     expect(screen.getByText('User: John Doe')).toBeInTheDocument()
 
-    // Check followed artists section
+    // Check artist grid is rendered with artists
+    expect(screen.getByTestId('artist-grid')).toBeInTheDocument()
     expect(screen.getByText('Artists You Follow (2)')).toBeInTheDocument()
-    expect(screen.getByText('Artist One')).toBeInTheDocument()
-    expect(screen.getByText('Artist Two')).toBeInTheDocument()
-    expect(screen.getByText('1,000,000 followers')).toBeInTheDocument()
-    expect(screen.getByText('500,000 followers')).toBeInTheDocument()
-    expect(screen.getByText('rock, alternative')).toBeInTheDocument()
-    expect(screen.getByText('pop, electronic')).toBeInTheDocument()
-
-    // Check artist images
-    const artistImages = screen.getAllByRole('img')
-    const artistOneImage = artistImages.find(
-      (img) => img.getAttribute('alt') === 'Artist One',
-    )
-    const artistTwoImage = artistImages.find(
-      (img) => img.getAttribute('alt') === 'Artist Two',
-    )
-
-    expect(artistOneImage).toBeInTheDocument()
-    expect(artistOneImage).toHaveAttribute(
-      'src',
-      'http://example.com/artist1.jpg',
-    )
-    expect(artistTwoImage).toBeInTheDocument()
-    expect(artistTwoImage).toHaveAttribute(
-      'src',
-      'http://example.com/artist2.jpg',
-    )
+    expect(screen.getByText('Artists: 2')).toBeInTheDocument()
   })
 
   test('renders empty state when user follows no artists', () => {

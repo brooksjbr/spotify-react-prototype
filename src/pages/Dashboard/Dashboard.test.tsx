@@ -1,7 +1,11 @@
 import { render, screen } from '@testing-library/react'
 import { vi } from 'vitest'
 
-import { useSpotify, useCurrentUser } from '../../hooks/useSpotify'
+import {
+  useSpotify,
+  useCurrentUser,
+  useFollowedArtists,
+} from '../../hooks/useSpotify'
 
 import Dashboard from './index'
 
@@ -9,17 +13,37 @@ import Dashboard from './index'
 vi.mock('../../hooks/useSpotify', () => ({
   useSpotify: vi.fn(),
   useCurrentUser: vi.fn(),
+  useFollowedArtists: vi.fn(),
 }))
 
-// Mock the Box component
-vi.mock('../../components/Box', () => ({
-  default: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="box">{children}</div>
+// Mock the DashboardLayout component
+vi.mock('../../components/Layout/DashboardLayout/DashboardLayout', () => ({
+  default: ({
+    title,
+    children,
+  }: {
+    title: string
+    children: React.ReactNode
+  }) => (
+    <div data-testid="dashboard-layout">
+      <h1>{title}</h1>
+      {children}
+    </div>
+  ),
+}))
+
+// Mock the UserProfile component
+vi.mock('../../components/UserProfile/UserProfile', () => ({
+  default: ({ user }: { user: any }) => (
+    <div data-testid="user-profile">
+      <span>User: {user.display_name}</span>
+    </div>
   ),
 }))
 
 const mockUseSpotify = useSpotify as ReturnType<typeof vi.fn>
 const mockUseCurrentUser = useCurrentUser as ReturnType<typeof vi.fn>
+const mockUseFollowedArtists = useFollowedArtists as ReturnType<typeof vi.fn>
 
 describe('Dashboard Component', () => {
   beforeEach(() => {
@@ -30,6 +54,11 @@ describe('Dashboard Component', () => {
     mockUseSpotify.mockReturnValue({ sdk: null })
     mockUseCurrentUser.mockReturnValue({
       user: null,
+      loading: false,
+      error: null,
+    })
+    mockUseFollowedArtists.mockReturnValue({
+      artists: null,
       loading: false,
       error: null,
     })
@@ -48,20 +77,54 @@ describe('Dashboard Component', () => {
       loading: true,
       error: null,
     })
+    mockUseFollowedArtists.mockReturnValue({
+      artists: null,
+      loading: false,
+      error: null,
+    })
 
     render(<Dashboard />)
 
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
-    expect(screen.getByText('Loading your profile...')).toBeInTheDocument()
+    expect(
+      screen.getByText('Loading your profile and followed artists...'),
+    ).toBeInTheDocument()
   })
 
-  test('shows error message when there is an error', () => {
+  test('shows loading message when fetching followed artists', () => {
+    const mockSdk = { currentUser: { profile: vi.fn() } }
+    mockUseSpotify.mockReturnValue({ sdk: mockSdk })
+    mockUseCurrentUser.mockReturnValue({
+      user: null,
+      loading: false,
+      error: null,
+    })
+    mockUseFollowedArtists.mockReturnValue({
+      artists: null,
+      loading: true,
+      error: null,
+    })
+
+    render(<Dashboard />)
+
+    expect(screen.getByText('Dashboard')).toBeInTheDocument()
+    expect(
+      screen.getByText('Loading your profile and followed artists...'),
+    ).toBeInTheDocument()
+  })
+
+  test('shows user error message when there is a user error', () => {
     const mockSdk = { currentUser: { profile: vi.fn() } }
     mockUseSpotify.mockReturnValue({ sdk: mockSdk })
     mockUseCurrentUser.mockReturnValue({
       user: null,
       loading: false,
       error: 'Failed to fetch user',
+    })
+    mockUseFollowedArtists.mockReturnValue({
+      artists: null,
+      loading: false,
+      error: null,
     })
 
     render(<Dashboard />)
@@ -74,7 +137,135 @@ describe('Dashboard Component', () => {
     ).toBeInTheDocument()
   })
 
-  test('renders user profile when data is available', () => {
+  test('shows artists error message when there is an artists error', () => {
+    const mockSdk = { currentUser: { profile: vi.fn() } }
+    mockUseSpotify.mockReturnValue({ sdk: mockSdk })
+    mockUseCurrentUser.mockReturnValue({
+      user: null,
+      loading: false,
+      error: null,
+    })
+    mockUseFollowedArtists.mockReturnValue({
+      artists: null,
+      loading: false,
+      error: 'Failed to fetch artists',
+    })
+
+    render(<Dashboard />)
+
+    expect(screen.getByText('Dashboard')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Error loading your followed artists: Failed to fetch artists',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  test('shows both error messages when both hooks have errors', () => {
+    const mockSdk = { currentUser: { profile: vi.fn() } }
+    mockUseSpotify.mockReturnValue({ sdk: mockSdk })
+    mockUseCurrentUser.mockReturnValue({
+      user: null,
+      loading: false,
+      error: 'User error',
+    })
+    mockUseFollowedArtists.mockReturnValue({
+      artists: null,
+      loading: false,
+      error: 'Artists error',
+    })
+
+    render(<Dashboard />)
+
+    expect(screen.getByText('Dashboard')).toBeInTheDocument()
+    expect(
+      screen.getByText('Error loading your Spotify profile: User error'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Error loading your followed artists: Artists error'),
+    ).toBeInTheDocument()
+  })
+
+  test('renders user profile and followed artists when data is available', () => {
+    const mockSdk = { currentUser: { profile: vi.fn() } }
+    const mockUser = {
+      display_name: 'John Doe',
+      email: 'john@example.com',
+      country: 'US',
+      followers: { total: 150 },
+      images: [{ url: 'http://example.com/profile.jpg' }],
+    }
+    const mockArtists = [
+      {
+        id: '1',
+        name: 'Artist One',
+        genres: ['rock', 'alternative'],
+        followers: { total: 1000000 },
+        images: [{ url: 'http://example.com/artist1.jpg' }],
+      },
+      {
+        id: '2',
+        name: 'Artist Two',
+        genres: ['pop', 'electronic'],
+        followers: { total: 500000 },
+        images: [{ url: 'http://example.com/artist2.jpg' }],
+      },
+    ]
+
+    mockUseSpotify.mockReturnValue({ sdk: mockSdk })
+    mockUseCurrentUser.mockReturnValue({
+      user: mockUser,
+      loading: false,
+      error: null,
+    })
+    mockUseFollowedArtists.mockReturnValue({
+      artists: mockArtists,
+      loading: false,
+      error: null,
+    })
+
+    render(<Dashboard />)
+
+    expect(screen.getByText('Dashboard')).toBeInTheDocument()
+    expect(
+      screen.getByText('Welcome to your Spotify dashboard!'),
+    ).toBeInTheDocument()
+
+    // Check user profile is rendered
+    expect(screen.getByTestId('user-profile')).toBeInTheDocument()
+    expect(screen.getByText('User: John Doe')).toBeInTheDocument()
+
+    // Check followed artists section
+    expect(screen.getByText('Artists You Follow (2)')).toBeInTheDocument()
+    expect(screen.getByText('Artist One')).toBeInTheDocument()
+    expect(screen.getByText('Artist Two')).toBeInTheDocument()
+    expect(screen.getByText('1,000,000 followers')).toBeInTheDocument()
+    expect(screen.getByText('500,000 followers')).toBeInTheDocument()
+    expect(screen.getByText('rock, alternative')).toBeInTheDocument()
+    expect(screen.getByText('pop, electronic')).toBeInTheDocument()
+
+    // Check artist images
+    const artistImages = screen.getAllByRole('img')
+    const artistOneImage = artistImages.find(
+      (img) => img.getAttribute('alt') === 'Artist One',
+    )
+    const artistTwoImage = artistImages.find(
+      (img) => img.getAttribute('alt') === 'Artist Two',
+    )
+
+    expect(artistOneImage).toBeInTheDocument()
+    expect(artistOneImage).toHaveAttribute(
+      'src',
+      'http://example.com/artist1.jpg',
+    )
+    expect(artistTwoImage).toBeInTheDocument()
+    expect(artistTwoImage).toHaveAttribute(
+      'src',
+      'http://example.com/artist2.jpg',
+    )
+  })
+
+  test('renders empty state when user follows no artists', () => {
     const mockSdk = { currentUser: { profile: vi.fn() } }
     const mockUser = {
       display_name: 'John Doe',
@@ -90,6 +281,11 @@ describe('Dashboard Component', () => {
       loading: false,
       error: null,
     })
+    mockUseFollowedArtists.mockReturnValue({
+      artists: [],
+      loading: false,
+      error: null,
+    })
 
     render(<Dashboard />)
 
@@ -97,18 +293,43 @@ describe('Dashboard Component', () => {
     expect(
       screen.getByText('Welcome to your Spotify dashboard!'),
     ).toBeInTheDocument()
-    expect(screen.getByText('Your Profile')).toBeInTheDocument()
-    expect(screen.getByText('John Doe')).toBeInTheDocument()
-    expect(screen.getByText('john@example.com')).toBeInTheDocument()
-    expect(screen.getByText('US')).toBeInTheDocument()
-    expect(screen.getByText('150')).toBeInTheDocument()
+    expect(screen.getByTestId('user-profile')).toBeInTheDocument()
+    expect(screen.getByText('Artists You Follow')).toBeInTheDocument()
+    expect(
+      screen.getByText("You're not following any artists yet."),
+    ).toBeInTheDocument()
+  })
 
-    const profileImage = screen.getByAltText('Profile')
-    expect(profileImage).toBeInTheDocument()
-    expect(profileImage).toHaveAttribute(
-      'src',
-      'http://example.com/profile.jpg',
-    )
+  test('renders user profile even when artists fail to load', () => {
+    const mockSdk = { currentUser: { profile: vi.fn() } }
+    const mockUser = {
+      display_name: 'John Doe',
+      email: 'john@example.com',
+      country: 'US',
+      followers: { total: 150 },
+      images: [{ url: 'http://example.com/profile.jpg' }],
+    }
+
+    mockUseSpotify.mockReturnValue({ sdk: mockSdk })
+    mockUseCurrentUser.mockReturnValue({
+      user: mockUser,
+      loading: false,
+      error: null,
+    })
+    mockUseFollowedArtists.mockReturnValue({
+      artists: null,
+      loading: false,
+      error: 'Failed to load artists',
+    })
+
+    render(<Dashboard />)
+
+    expect(screen.getByText('Dashboard')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Error loading your followed artists: Failed to load artists',
+      ),
+    ).toBeInTheDocument()
   })
 
   test('has correct displayName', () => {

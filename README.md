@@ -4,7 +4,7 @@
 
 This is prototype app built in React using typescript. Incorporating the Spotify web SDK, to retrieve and render a spotify user profile.
 
-**Tech Stack:**
+### **Tech Stack:**
 
 - ⚛️ React 18 with TypeScript
 - ⚡ Vite for fast development and building
@@ -13,8 +13,8 @@ This is prototype app built in React using typescript. Incorporating the Spotify
 - 🧪 @testing-library/react for DOM testing
 - 📦 pnpm for package management
 - :octocat: GitHub Workflow for lint, test, build automation
-- 🎵 @spotify/web-api-ts-sdk for Spotify API integration
-- 🫙 Docker for Github workflow testing
+- :spotify: @spotify/web-api-ts-sdk for Spotify API integration
+- :docker: Docker for Github workflow testing
 
 ### Project details and external requirements
 

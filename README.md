@@ -41,6 +41,7 @@ pnpm serve           # launch server for production bundle in local
 pnpm remove:tailwind # remove TailwindCSS
 ```
 
-# License
+# Notes:
 
-MIT
+The act extension for the GH command line tool is helpful testing workflows locally prior to PRs. Requires Docker.
+https://nektosact.com/introduction.html

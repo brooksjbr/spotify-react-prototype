@@ -4,7 +4,29 @@ import {
   Scopes,
   SpotifyApi,
 } from '@spotify/web-api-ts-sdk'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+
+const STORAGE_KEYS = {
+  USER: 'spotify_user',
+  ARTISTS: 'spotify_artists',
+} as const
+
+const getStoredData = <T>(key: string): T | null => {
+  try {
+    const stored = localStorage.getItem(key)
+    return stored ? JSON.parse(stored) : null
+  } catch {
+    return null
+  }
+}
+
+const setStoredData = <T>(key: string, data: T): void => {
+  try {
+    localStorage.setItem(key, JSON.stringify(data))
+  } catch (error) {
+    console.error('Failed to save to localStorage:', error)
+  }
+}
 
 const SCOPES = [
   ...Scopes.userDetails,
@@ -47,7 +69,9 @@ export const useSpotify = (customScopes: string[] = SCOPES) => {
 }
 
 export const useCurrentUser = (sdk: SpotifyApi | null) => {
-  const [user, setUser] = useState<UserProfile | null>(null)
+  const [user, setUser] = useState<UserProfile | null>(() =>
+    getStoredData<UserProfile>(STORAGE_KEYS.USER),
+  )
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -64,6 +88,7 @@ export const useCurrentUser = (sdk: SpotifyApi | null) => {
         if (sdk && sdk.currentUser) {
           const userProfile: UserProfile = await sdk.currentUser.profile()
           setUser(userProfile)
+          setStoredData(STORAGE_KEYS.USER, userProfile)
         } else {
           throw new Error(
             'Spotify SDK is not initialized or currentUser is unavailable',
@@ -80,13 +105,20 @@ export const useCurrentUser = (sdk: SpotifyApi | null) => {
     }
 
     fetchUserProfile()
-  }, [sdk]) // Remove 'user' from dependency array to prevent infinite loops
+  }, [sdk])
 
-  return { user, loading, error }
+  const clearUser = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEYS.USER)
+    setUser(null)
+  }, [])
+
+  return { user, loading, error, clearUser }
 }
 
 export const useFollowedArtists = (sdk: SpotifyApi | null) => {
-  const [artists, setArtists] = useState<Artist[] | null>(null)
+  const [artists, setArtists] = useState<Artist[] | null>(() =>
+    getStoredData<Artist[]>(STORAGE_KEYS.ARTISTS),
+  )
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -102,8 +134,8 @@ export const useFollowedArtists = (sdk: SpotifyApi | null) => {
       try {
         if (sdk && sdk.currentUser) {
           const followedArtists = await sdk.currentUser.followedArtists()
-          // The API returns { artists: { items: Artist[] } }
           setArtists(followedArtists.artists.items)
+          setStoredData(STORAGE_KEYS.ARTISTS, followedArtists.artists.items)
         } else {
           throw new Error(
             'Spotify SDK is not initialized or currentUser is unavailable',
@@ -122,5 +154,10 @@ export const useFollowedArtists = (sdk: SpotifyApi | null) => {
     fetchFollowedArtists()
   }, [sdk])
 
-  return { artists, loading, error }
+  const clearArtists = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEYS.ARTISTS)
+    setArtists(null)
+  }, [])
+
+  return { artists, loading, error, clearArtists }
 }

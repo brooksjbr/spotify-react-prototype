@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { vi } from 'vitest'
 
+import { useEvents } from '../../hooks/useEvents'
 import {
   useSpotify,
   useCurrentUser,
@@ -16,6 +17,10 @@ vi.mock('../../hooks/useSpotify', () => ({
   useCurrentUser: vi.fn(),
   useFollowedArtists: vi.fn(),
   useTopArtists: vi.fn(),
+}))
+
+vi.mock('../../hooks/useEvents', () => ({
+  useEvents: vi.fn(),
 }))
 
 // Mock the DashboardLayout component
@@ -66,6 +71,7 @@ const mockUseSpotify = useSpotify as ReturnType<typeof vi.fn>
 const mockUseCurrentUser = useCurrentUser as ReturnType<typeof vi.fn>
 const mockUseFollowedArtists = useFollowedArtists as ReturnType<typeof vi.fn>
 const mockUseTopArtists = useTopArtists as ReturnType<typeof vi.fn>
+const mockUseEvents = useEvents as ReturnType<typeof vi.fn>
 
 const defaultTopArtistsReturn = {
   topArtists: null,
@@ -73,9 +79,16 @@ const defaultTopArtistsReturn = {
   error: null,
 }
 
+const defaultEventsReturn = {
+  events: null,
+  loading: false,
+  error: null,
+}
+
 describe('Dashboard Component', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockUseEvents.mockReturnValue(defaultEventsReturn)
   })
 
   test('shows connecting message when SDK is not available', () => {
@@ -250,6 +263,14 @@ describe('Dashboard Component', () => {
       loading: false,
       error: null,
     })
+    mockUseEvents.mockReturnValue({
+      events: [
+        { id: '1', artist_name: 'Artist One', event_name: 'Concert 1' },
+        { id: '2', artist_name: 'Artist Two', event_name: 'Concert 2' },
+      ],
+      loading: false,
+      error: null,
+    })
 
     render(<Dashboard />)
 
@@ -262,11 +283,11 @@ describe('Dashboard Component', () => {
     expect(screen.getByTestId('user-profile')).toBeInTheDocument()
     expect(screen.getByText('User: John Doe')).toBeInTheDocument()
 
-    // Check artist grids are rendered
+    // Check artist grids are rendered (artists with matching events)
     expect(screen.getAllByTestId('artist-grid')).toHaveLength(2)
   })
 
-  test('renders empty state when user follows no artists', () => {
+  test('renders empty state when no events match artists', () => {
     const mockSdk = { currentUser: { profile: vi.fn() } }
     const mockUser = {
       display_name: 'John Doe',
@@ -283,11 +304,16 @@ describe('Dashboard Component', () => {
       error: null,
     })
     mockUseFollowedArtists.mockReturnValue({
-      artists: [],
+      artists: [{ id: '1', name: 'Artist One' }],
       loading: false,
       error: null,
     })
     mockUseTopArtists.mockReturnValue(defaultTopArtistsReturn)
+    mockUseEvents.mockReturnValue({
+      events: [],
+      loading: false,
+      error: null,
+    })
 
     render(<Dashboard />)
 
@@ -296,10 +322,8 @@ describe('Dashboard Component', () => {
       screen.getByText('Welcome to your Spotify dashboard!'),
     ).toBeInTheDocument()
     expect(screen.getByTestId('user-profile')).toBeInTheDocument()
-    expect(screen.getAllByText('Artists You Follow').length).toBeGreaterThan(0)
-    expect(
-      screen.getByText("You're not following any artists yet."),
-    ).toBeInTheDocument()
+    // No artist grids rendered when no events match
+    expect(screen.queryByTestId('artist-grid')).not.toBeInTheDocument()
   })
 
   test('renders user profile even when artists fail to load', () => {

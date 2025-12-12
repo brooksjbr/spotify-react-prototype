@@ -7,6 +7,7 @@ import {
   useSpotify,
   useCurrentUser,
   useFollowedArtists,
+  useTopArtists,
 } from '../../hooks/useSpotify'
 
 interface Props {}
@@ -19,6 +20,11 @@ const Dashboard: React.FC<Props> = memo(() => {
     loading: artistsLoading,
     error: artistsError,
   } = useFollowedArtists(sdk)
+  const {
+    topArtists,
+    loading: topArtistsLoading,
+    error: topArtistsError,
+  } = useTopArtists(sdk)
 
   // Loading state while SDK is initializing
   if (!sdk) {
@@ -30,16 +36,16 @@ const Dashboard: React.FC<Props> = memo(() => {
   }
 
   // Loading state while fetching data
-  if (userLoading || artistsLoading) {
+  if (userLoading || artistsLoading || topArtistsLoading) {
     return (
       <DashboardLayout title="Dashboard">
-        <p>Loading your profile and followed artists...</p>
+        <p>Loading your profile and artists...</p>
       </DashboardLayout>
     )
   }
 
   // Error state
-  if (userError || artistsError) {
+  if (userError || artistsError || topArtistsError) {
     return (
       <DashboardLayout title="Dashboard">
         <div className="space-y-2">
@@ -47,19 +53,34 @@ const Dashboard: React.FC<Props> = memo(() => {
           {artistsError && (
             <p>Error loading your followed artists: {artistsError}</p>
           )}
+          {topArtistsError && (
+            <p>Error loading your top artists: {topArtistsError}</p>
+          )}
         </div>
       </DashboardLayout>
     )
   }
 
-  // Success state - render user profile and followed artists
+  // Success state - render user profile and artists
   return (
     <DashboardLayout title="Dashboard">
       <p>Welcome to your Spotify dashboard!</p>
 
       {user && <UserProfile user={user} />}
 
-      {artists && <ArtistGrid artists={artists} />}
+      {topArtists && (
+        <>
+          <h2 className="mt-8 mb-4 text-xl font-bold">Your Top Artists</h2>
+          <ArtistGrid artists={topArtists} />
+        </>
+      )}
+
+      {artists && (
+        <>
+          <h2 className="mt-8 mb-4 text-xl font-bold">Artists You Follow</h2>
+          <ArtistGrid artists={artists} />
+        </>
+      )}
     </DashboardLayout>
   )
 })

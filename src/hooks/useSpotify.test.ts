@@ -2,7 +2,12 @@ import type { SpotifyApi } from '@spotify/web-api-ts-sdk'
 import { renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, vi } from 'vitest'
 
-import { useSpotify, useCurrentUser, useFollowedArtists } from './useSpotify'
+import {
+  useSpotify,
+  useCurrentUser,
+  useFollowedArtists,
+  useTopArtists,
+} from './useSpotify'
 
 const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
@@ -16,6 +21,7 @@ const mockSpotifyApi = {
   currentUser: {
     profile: vi.fn(),
     followedArtists: vi.fn(),
+    topItems: vi.fn(),
   },
 }
 
@@ -230,5 +236,122 @@ describe('useFollowedArtists', () => {
     expect(result.current.loading).toBe(false)
     expect(result.current.error).toBeNull()
     expect(mockSpotifyApi.currentUser.followedArtists).not.toHaveBeenCalled()
+  })
+})
+
+describe('useTopArtists', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    localStorage.clear()
+  })
+
+  test('returns initial state when no sdk provided', () => {
+    const { result } = renderHook(() => useTopArtists(null))
+
+    expect(result.current.topArtists).toBeNull()
+    expect(result.current.loading).toBe(false)
+    expect(result.current.error).toBeNull()
+  })
+
+  test('fetches top artists successfully', async () => {
+    const mockArtists = [
+      {
+        id: '1',
+        name: 'Top Artist One',
+        genres: ['indie'],
+        popularity: 90,
+        followers: { total: 2000000 },
+        images: [{ url: 'http://example.com/top1.jpg' }],
+      },
+      {
+        id: '2',
+        name: 'Top Artist Two',
+        genres: ['electronic'],
+        popularity: 85,
+        followers: { total: 1500000 },
+        images: [{ url: 'http://example.com/top2.jpg' }],
+      },
+    ]
+
+    const mockTopItemsResponse = {
+      items: mockArtists,
+      total: 2,
+      limit: 20,
+      offset: 0,
+      href: 'https://api.spotify.com/v1/me/top/artists',
+      next: null,
+      previous: null,
+    }
+
+    mockSpotifyApi.currentUser.topItems.mockResolvedValue(mockTopItemsResponse)
+
+    const { result } = renderHook(() =>
+      useTopArtists(mockSpotifyApi as unknown as SpotifyApi),
+    )
+
+    expect(result.current.loading).toBe(true)
+
+    await waitFor(() => {
+      expect(result.current.topArtists).toEqual(mockArtists)
+      expect(result.current.loading).toBe(false)
+      expect(result.current.error).toBeNull()
+    })
+
+    expect(mockSpotifyApi.currentUser.topItems).toHaveBeenCalledWith(
+      'artists',
+      'medium_term',
+      20,
+    )
+  })
+
+  test('fetches top artists with custom time range', async () => {
+    const mockTopItemsResponse = {
+      items: [],
+      total: 0,
+      limit: 10,
+      offset: 0,
+      href: 'https://api.spotify.com/v1/me/top/artists',
+      next: null,
+      previous: null,
+    }
+
+    mockSpotifyApi.currentUser.topItems.mockResolvedValue(mockTopItemsResponse)
+
+    renderHook(() =>
+      useTopArtists(mockSpotifyApi as unknown as SpotifyApi, 'short_term', 10),
+    )
+
+    await waitFor(() => {
+      expect(mockSpotifyApi.currentUser.topItems).toHaveBeenCalledWith(
+        'artists',
+        'short_term',
+        10,
+      )
+    })
+  })
+
+  test('handles error when fetching top artists fails', async () => {
+    mockSpotifyApi.currentUser.topItems.mockRejectedValue(
+      new Error('Top Artists API Error'),
+    )
+
+    const { result } = renderHook(() =>
+      useTopArtists(mockSpotifyApi as unknown as SpotifyApi),
+    )
+
+    await waitFor(() => {
+      expect(result.current.topArtists).toBeNull()
+      expect(result.current.loading).toBe(false)
+      expect(result.current.error).toBe('Top Artists API Error')
+    })
+  })
+
+  test('does not fetch when sdk is null', () => {
+    const { result } = renderHook(() => useTopArtists(null))
+
+    expect(result.current.topArtists).toBeNull()
+    expect(result.current.loading).toBe(false)
+    expect(result.current.error).toBeNull()
+    expect(mockSpotifyApi.currentUser.topItems).not.toHaveBeenCalled()
   })
 })

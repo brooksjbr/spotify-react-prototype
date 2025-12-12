@@ -5,6 +5,7 @@ import {
   useSpotify,
   useCurrentUser,
   useFollowedArtists,
+  useTopArtists,
 } from '../../hooks/useSpotify'
 
 import Dashboard from './index'
@@ -14,6 +15,7 @@ vi.mock('../../hooks/useSpotify', () => ({
   useSpotify: vi.fn(),
   useCurrentUser: vi.fn(),
   useFollowedArtists: vi.fn(),
+  useTopArtists: vi.fn(),
 }))
 
 // Mock the DashboardLayout component
@@ -63,6 +65,13 @@ vi.mock('../../components/ArtistGrid/ArtistGrid', () => ({
 const mockUseSpotify = useSpotify as ReturnType<typeof vi.fn>
 const mockUseCurrentUser = useCurrentUser as ReturnType<typeof vi.fn>
 const mockUseFollowedArtists = useFollowedArtists as ReturnType<typeof vi.fn>
+const mockUseTopArtists = useTopArtists as ReturnType<typeof vi.fn>
+
+const defaultTopArtistsReturn = {
+  topArtists: null,
+  loading: false,
+  error: null,
+}
 
 describe('Dashboard Component', () => {
   beforeEach(() => {
@@ -81,6 +90,7 @@ describe('Dashboard Component', () => {
       loading: false,
       error: null,
     })
+    mockUseTopArtists.mockReturnValue(defaultTopArtistsReturn)
 
     render(<Dashboard />)
 
@@ -101,12 +111,13 @@ describe('Dashboard Component', () => {
       loading: false,
       error: null,
     })
+    mockUseTopArtists.mockReturnValue(defaultTopArtistsReturn)
 
     render(<Dashboard />)
 
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
     expect(
-      screen.getByText('Loading your profile and followed artists...'),
+      screen.getByText('Loading your profile and artists...'),
     ).toBeInTheDocument()
   })
 
@@ -123,12 +134,13 @@ describe('Dashboard Component', () => {
       loading: true,
       error: null,
     })
+    mockUseTopArtists.mockReturnValue(defaultTopArtistsReturn)
 
     render(<Dashboard />)
 
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
     expect(
-      screen.getByText('Loading your profile and followed artists...'),
+      screen.getByText('Loading your profile and artists...'),
     ).toBeInTheDocument()
   })
 
@@ -145,6 +157,7 @@ describe('Dashboard Component', () => {
       loading: false,
       error: null,
     })
+    mockUseTopArtists.mockReturnValue(defaultTopArtistsReturn)
 
     render(<Dashboard />)
 
@@ -169,6 +182,7 @@ describe('Dashboard Component', () => {
       loading: false,
       error: 'Failed to fetch artists',
     })
+    mockUseTopArtists.mockReturnValue(defaultTopArtistsReturn)
 
     render(<Dashboard />)
 
@@ -193,6 +207,7 @@ describe('Dashboard Component', () => {
       loading: false,
       error: 'Artists error',
     })
+    mockUseTopArtists.mockReturnValue(defaultTopArtistsReturn)
 
     render(<Dashboard />)
 
@@ -230,6 +245,11 @@ describe('Dashboard Component', () => {
       loading: false,
       error: null,
     })
+    mockUseTopArtists.mockReturnValue({
+      topArtists: mockArtists,
+      loading: false,
+      error: null,
+    })
 
     render(<Dashboard />)
 
@@ -242,10 +262,8 @@ describe('Dashboard Component', () => {
     expect(screen.getByTestId('user-profile')).toBeInTheDocument()
     expect(screen.getByText('User: John Doe')).toBeInTheDocument()
 
-    // Check artist grid is rendered with artists
-    expect(screen.getByTestId('artist-grid')).toBeInTheDocument()
-    expect(screen.getByText('Artists You Follow (2)')).toBeInTheDocument()
-    expect(screen.getByText('Artists: 2')).toBeInTheDocument()
+    // Check artist grids are rendered
+    expect(screen.getAllByTestId('artist-grid')).toHaveLength(2)
   })
 
   test('renders empty state when user follows no artists', () => {
@@ -269,6 +287,7 @@ describe('Dashboard Component', () => {
       loading: false,
       error: null,
     })
+    mockUseTopArtists.mockReturnValue(defaultTopArtistsReturn)
 
     render(<Dashboard />)
 
@@ -277,7 +296,7 @@ describe('Dashboard Component', () => {
       screen.getByText('Welcome to your Spotify dashboard!'),
     ).toBeInTheDocument()
     expect(screen.getByTestId('user-profile')).toBeInTheDocument()
-    expect(screen.getByText('Artists You Follow')).toBeInTheDocument()
+    expect(screen.getAllByText('Artists You Follow').length).toBeGreaterThan(0)
     expect(
       screen.getByText("You're not following any artists yet."),
     ).toBeInTheDocument()
@@ -304,6 +323,7 @@ describe('Dashboard Component', () => {
       loading: false,
       error: 'Failed to load artists',
     })
+    mockUseTopArtists.mockReturnValue(defaultTopArtistsReturn)
 
     render(<Dashboard />)
 

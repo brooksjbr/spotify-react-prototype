@@ -1,8 +1,10 @@
-import React, { memo } from 'react'
+import React, { memo, useMemo } from 'react'
 
 import ArtistGrid from '../../components/ArtistGrid/ArtistGrid'
+import EventCarousel from '../../components/EventCarousel'
 import DashboardLayout from '../../components/Layout/DashboardLayout/DashboardLayout'
 import UserProfile from '../../components/UserProfile/UserProfile'
+import { useEvents } from '../../hooks/useEvents'
 import {
   useSpotify,
   useCurrentUser,
@@ -25,6 +27,39 @@ const Dashboard: React.FC<Props> = memo(() => {
     loading: topArtistsLoading,
     error: topArtistsError,
   } = useTopArtists(sdk)
+
+  const allArtistNames = useMemo(() => {
+    const names = new Set<string>()
+    topArtists?.forEach((artist) => names.add(artist.name))
+    artists?.forEach((artist) => names.add(artist.name))
+    return Array.from(names)
+  }, [topArtists, artists])
+
+  const {
+    events,
+    loading: eventsLoading,
+    error: eventsError,
+  } = useEvents(allArtistNames.length > 0 ? allArtistNames : null)
+
+  const artistsWithEvents = useMemo(() => {
+    if (!events || events.length === 0) return { top: [], followed: [] }
+
+    const eventArtistNames = new Set(
+      events.map((e) => e.artist_name.toLowerCase()),
+    )
+
+    const topWithEvents =
+      topArtists?.filter((artist) =>
+        eventArtistNames.has(artist.name.toLowerCase()),
+      ) ?? []
+
+    const followedWithEvents =
+      artists?.filter((artist) =>
+        eventArtistNames.has(artist.name.toLowerCase()),
+      ) ?? []
+
+    return { top: topWithEvents, followed: followedWithEvents }
+  }, [events, topArtists, artists])
 
   // Loading state while SDK is initializing
   if (!sdk) {
@@ -68,17 +103,31 @@ const Dashboard: React.FC<Props> = memo(() => {
 
       {user && <UserProfile user={user} />}
 
-      {topArtists && (
+      {eventsLoading && (
+        <p className="mt-4 text-gray-600">Searching for events...</p>
+      )}
+      {eventsError && (
+        <p className="mt-4 text-red-500">Error loading events: {eventsError}</p>
+      )}
+      {events && events.length > 0 && (
+        <EventCarousel events={events} title="Events Near You" />
+      )}
+
+      {artistsWithEvents.top.length > 0 && (
         <>
-          <h2 className="mt-8 mb-4 text-xl font-bold">Your Top Artists</h2>
-          <ArtistGrid artists={topArtists} />
+          <h2 className="mt-8 mb-4 text-xl font-bold">
+            Your Top Artists with Upcoming Events
+          </h2>
+          <ArtistGrid artists={artistsWithEvents.top} />
         </>
       )}
 
-      {artists && (
+      {artistsWithEvents.followed.length > 0 && (
         <>
-          <h2 className="mt-8 mb-4 text-xl font-bold">Artists You Follow</h2>
-          <ArtistGrid artists={artists} />
+          <h2 className="mt-8 mb-4 text-xl font-bold">
+            Artists You Follow with Upcoming Events
+          </h2>
+          <ArtistGrid artists={artistsWithEvents.followed} />
         </>
       )}
     </DashboardLayout>

@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from 'react'
 const STORAGE_KEYS = {
   USER: 'spotify_user',
   ARTISTS: 'spotify_artists',
+  TOP_ARTISTS: 'spotify_top_artists',
 } as const
 
 const getStoredData = <T>(key: string): T | null => {
@@ -33,6 +34,7 @@ const SCOPES = [
   ...Scopes.userFollowRead,
   ...Scopes.playlistRead,
   ...Scopes.userLibrary,
+  'user-top-read',
 ]
 
 export const useSpotify = (customScopes: string[] = SCOPES) => {
@@ -160,4 +162,61 @@ export const useFollowedArtists = (sdk: SpotifyApi | null) => {
   }, [])
 
   return { artists, loading, error, clearArtists }
+}
+
+export type TimeRange = 'short_term' | 'medium_term' | 'long_term'
+
+export const useTopArtists = (
+  sdk: SpotifyApi | null,
+  timeRange: TimeRange = 'medium_term',
+  limit: number = 20,
+) => {
+  const [topArtists, setTopArtists] = useState<Artist[] | null>(() =>
+    getStoredData<Artist[]>(STORAGE_KEYS.TOP_ARTISTS),
+  )
+  const [loading, setLoading] = useState<boolean>(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!sdk) {
+      return
+    }
+
+    const fetchTopArtists = async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        if (sdk && sdk.currentUser) {
+          const response = await sdk.currentUser.topItems(
+            'artists',
+            timeRange,
+            limit as 1 | 10 | 20 | 50,
+          )
+          setTopArtists(response.items)
+          setStoredData(STORAGE_KEYS.TOP_ARTISTS, response.items)
+        } else {
+          throw new Error(
+            'Spotify SDK is not initialized or currentUser is unavailable',
+          )
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error occurred'
+        setError(errorMessage)
+        console.error('Spotify Top Artists Error: ' + error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTopArtists()
+  }, [sdk, timeRange, limit])
+
+  const clearTopArtists = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEYS.TOP_ARTISTS)
+    setTopArtists(null)
+  }, [])
+
+  return { topArtists, loading, error, clearTopArtists }
 }

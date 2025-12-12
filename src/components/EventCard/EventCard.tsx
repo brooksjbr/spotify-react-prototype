@@ -1,6 +1,10 @@
+import { Calendar, MapPin, Music } from 'lucide-react'
 import React from 'react'
 
 import type { Event } from '@/@types/event'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardFooter } from '@/components/ui/card'
 
 interface EventCardProps {
   event: Event
@@ -12,7 +16,6 @@ const formatDate = (dateStr: string): string => {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
-    year: 'numeric',
   })
 }
 
@@ -45,52 +48,60 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
   )
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow w-[300px] flex-shrink-0">
-      <div className="w-full h-[180px] bg-gray-200">
+    <Card className="w-[300px] shrink-0 overflow-hidden py-0">
+      <div className="relative h-[160px] w-full bg-muted">
         {event.image_url ? (
           <img
             src={event.image_url}
             alt={event.event_name}
-            className="w-full h-full object-cover"
+            className="size-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400">
-            <span className="text-4xl">🎵</span>
+          <div className="flex size-full items-center justify-center">
+            <Music className="size-12 text-muted-foreground" />
           </div>
         )}
-      </div>
-      <div className="p-4">
-        <h3 className="font-bold text-lg line-clamp-2 mb-1">
-          {event.event_name}
-        </h3>
-        <p className="text-sm text-green-600 font-medium mb-2">
-          {event.artist_name}
-        </p>
-        <div className="text-sm text-gray-600 space-y-1">
-          <p>
-            📅 {formatDate(event.local_date)}
-            {event.local_time && ` at ${formatTime(event.local_time)}`}
-          </p>
-          <p>📍 {event.venue_name}</p>
-          <p>
-            {event.city}, {event.state}
-          </p>
-          {priceDisplay && (
-            <p className="font-semibold text-gray-800">{priceDisplay}</p>
-          )}
-        </div>
-        {event.event_url && (
-          <a
-            href={event.event_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 inline-block bg-green-500 hover:bg-green-600 text-white text-sm font-medium py-2 px-4 rounded transition-colors"
-          >
-            Get Tickets
-          </a>
+        {priceDisplay && (
+          <Badge className="absolute bottom-2 right-2 bg-primary text-primary-foreground">
+            {priceDisplay}
+          </Badge>
         )}
       </div>
-    </div>
+      <CardContent className="space-y-3 pt-4">
+        <div>
+          <h3 className="line-clamp-2 font-semibold leading-tight">
+            {event.event_name}
+          </h3>
+          <p className="mt-1 text-sm font-medium text-primary">
+            {event.artist_name}
+          </p>
+        </div>
+        <div className="space-y-1.5 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Calendar className="size-4 shrink-0" />
+            <span>
+              {formatDate(event.local_date)}
+              {event.local_time && ` • ${formatTime(event.local_time)}`}
+            </span>
+          </div>
+          <div className="flex items-start gap-2">
+            <MapPin className="mt-0.5 size-4 shrink-0" />
+            <span className="line-clamp-2">
+              {event.venue_name}, {event.city}
+            </span>
+          </div>
+        </div>
+      </CardContent>
+      {event.event_url && (
+        <CardFooter className="pb-4">
+          <Button asChild className="w-full">
+            <a href={event.event_url} target="_blank" rel="noopener noreferrer">
+              Get Tickets
+            </a>
+          </Button>
+        </CardFooter>
+      )}
+    </Card>
   )
 }
 

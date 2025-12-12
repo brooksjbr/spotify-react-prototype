@@ -1,4 +1,6 @@
-import Box from '../../Box'
+import React from 'react'
+
+import Box from '@/components/Box'
 
 import styles from './DashboardLayout.module.css'
 
@@ -14,7 +16,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   return (
     <Box>
       <h1 className={styles.h1}>{title}</h1>
-      {children}
+      <div className={styles.content}>{children}</div>
     </Box>
   )
 }

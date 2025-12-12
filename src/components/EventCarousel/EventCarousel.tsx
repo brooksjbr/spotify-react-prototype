@@ -1,7 +1,10 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import React, { useRef } from 'react'
 
 import type { Event } from '@/@types/event'
 import EventCard from '@/components/EventCard'
+import { Button } from '@/components/ui/button'
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 
 interface EventCarouselProps {
   events: Event[]
@@ -26,51 +29,49 @@ const EventCarousel: React.FC<EventCarouselProps> = ({
 
   if (events.length === 0) {
     return (
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold mb-2">{title}</h2>
-        <p className="text-gray-600">No matching events found in your area.</p>
+      <div className="py-4">
+        <h2 className="mb-2 text-xl font-semibold">{title}</h2>
+        <p className="text-muted-foreground">
+          No matching events found in your area.
+        </p>
       </div>
     )
   }
 
   return (
-    <div className="mt-6 w-full max-w-full">
-      <div className="flex items-center justify-between mb-4">
+    <div className="w-full">
+      <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xl font-semibold">
-          {title} ({events.length})
+          {title}{' '}
+          <span className="text-muted-foreground">({events.length})</span>
         </h2>
-        <div className="flex gap-2">
-          <button
+        <div className="flex gap-1">
+          <Button
+            variant="outline"
+            size="icon-sm"
             onClick={() => scroll('left')}
-            className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
             aria-label="Scroll left"
           >
-            ←
-          </button>
-          <button
+            <ChevronLeft className="size-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon-sm"
             onClick={() => scroll('right')}
-            className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
             aria-label="Scroll right"
           >
-            →
-          </button>
+            <ChevronRight className="size-4" />
+          </Button>
         </div>
       </div>
-      <div
-        ref={scrollRef}
-        className="overflow-x-auto pb-4"
-        style={{
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-          WebkitOverflowScrolling: 'touch',
-        }}
-      >
-        <div className="inline-flex gap-4">
+      <ScrollArea className="w-full">
+        <div ref={scrollRef} className="flex gap-4 pb-4">
           {events.map((event) => (
             <EventCard key={event.id} event={event} />
           ))}
         </div>
-      </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
     </div>
   )
 }

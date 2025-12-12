@@ -1,20 +1,19 @@
 import React, { memo, useMemo } from 'react'
 
-import ArtistGrid from '../../components/ArtistGrid/ArtistGrid'
-import EventCarousel from '../../components/EventCarousel'
-import DashboardLayout from '../../components/Layout/DashboardLayout/DashboardLayout'
-import UserProfile from '../../components/UserProfile/UserProfile'
-import { useEvents } from '../../hooks/useEvents'
+import ArtistGrid from '@/components/ArtistGrid'
+import EventCarousel from '@/components/EventCarousel'
+import DashboardLayout from '@/components/Layout/DashboardLayout/DashboardLayout'
+import { Skeleton } from '@/components/ui/skeleton'
+import UserProfile from '@/components/UserProfile'
+import { useEvents } from '@/hooks/useEvents'
 import {
   useSpotify,
   useCurrentUser,
   useFollowedArtists,
   useTopArtists,
-} from '../../hooks/useSpotify'
+} from '@/hooks/useSpotify'
 
-interface Props {}
-
-const Dashboard: React.FC<Props> = memo(() => {
+const Dashboard: React.FC = memo(() => {
   const { sdk } = useSpotify()
   const { user, loading: userLoading, error: userError } = useCurrentUser(sdk)
   const {
@@ -61,74 +60,96 @@ const Dashboard: React.FC<Props> = memo(() => {
     return { top: topWithEvents, followed: followedWithEvents }
   }, [events, topArtists, artists])
 
-  // Loading state while SDK is initializing
   if (!sdk) {
     return (
       <DashboardLayout title="Dashboard">
-        <p>Connecting to Spotify...</p>
+        <div className="space-y-4">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
       </DashboardLayout>
     )
   }
 
-  // Loading state while fetching data
   if (userLoading || artistsLoading || topArtistsLoading) {
     return (
       <DashboardLayout title="Dashboard">
-        <p>Loading your profile and artists...</p>
+        <div className="space-y-6">
+          <Skeleton className="h-28 w-full" />
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-48" />
+            <div className="flex gap-4 overflow-hidden">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-72 w-[300px] shrink-0" />
+              ))}
+            </div>
+          </div>
+        </div>
       </DashboardLayout>
     )
   }
 
-  // Error state
   if (userError || artistsError || topArtistsError) {
     return (
       <DashboardLayout title="Dashboard">
-        <div className="space-y-2">
-          {userError && <p>Error loading your Spotify profile: {userError}</p>}
+        <div className="space-y-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+          {userError && (
+            <p className="text-destructive">
+              Error loading your Spotify profile: {userError}
+            </p>
+          )}
           {artistsError && (
-            <p>Error loading your followed artists: {artistsError}</p>
+            <p className="text-destructive">
+              Error loading your followed artists: {artistsError}
+            </p>
           )}
           {topArtistsError && (
-            <p>Error loading your top artists: {topArtistsError}</p>
+            <p className="text-destructive">
+              Error loading your top artists: {topArtistsError}
+            </p>
           )}
         </div>
       </DashboardLayout>
     )
   }
 
-  // Success state - render user profile and artists
   return (
     <DashboardLayout title="Dashboard">
-      <p>Welcome to your Spotify dashboard!</p>
-
       {user && <UserProfile user={user} />}
 
       {eventsLoading && (
-        <p className="mt-4 text-gray-600">Searching for events...</p>
+        <div className="space-y-4">
+          <Skeleton className="h-6 w-48" />
+          <div className="flex gap-4 overflow-hidden">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-72 w-[300px] shrink-0" />
+            ))}
+          </div>
+        </div>
       )}
       {eventsError && (
-        <p className="mt-4 text-red-500">Error loading events: {eventsError}</p>
+        <p className="text-destructive">Error loading events: {eventsError}</p>
       )}
       {events && events.length > 0 && (
         <EventCarousel events={events} title="Events Near You" />
       )}
 
       {artistsWithEvents.top.length > 0 && (
-        <>
-          <h2 className="mt-8 mb-4 text-xl font-bold">
+        <section>
+          <h2 className="mb-4 text-xl font-semibold">
             Your Top Artists with Upcoming Events
           </h2>
           <ArtistGrid artists={artistsWithEvents.top} />
-        </>
+        </section>
       )}
 
       {artistsWithEvents.followed.length > 0 && (
-        <>
-          <h2 className="mt-8 mb-4 text-xl font-bold">
+        <section>
+          <h2 className="mb-4 text-xl font-semibold">
             Artists You Follow with Upcoming Events
           </h2>
           <ArtistGrid artists={artistsWithEvents.followed} />
-        </>
+        </section>
       )}
     </DashboardLayout>
   )

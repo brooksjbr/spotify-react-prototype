@@ -5,7 +5,7 @@ import styles from './Layout.module.css'
 
 const Layout: React.FC<PropsWithChildren> = ({ children, ...rest }) => {
   return (
-    <main className={styles.layout} {...rest}>
+    <main className={`${styles.layout} dark bg-background`} {...rest}>
       <div className={styles.container}>{children}</div>
     </main>
   )

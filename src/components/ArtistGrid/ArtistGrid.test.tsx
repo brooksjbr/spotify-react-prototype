@@ -47,70 +47,46 @@ const mockArtists: Artist[] = [
 ]
 
 describe('ArtistGrid Component', () => {
-  test('renders empty state when no artists provided', () => {
-    render(<ArtistGrid artists={[]} />)
-
-    expect(screen.getByText('Artists You Follow')).toBeInTheDocument()
-    expect(
-      screen.getByText("You're not following any artists yet."),
-    ).toBeInTheDocument()
+  test('returns null when no artists provided', () => {
+    const { container } = render(<ArtistGrid artists={[]} />)
+    expect(container.firstChild).toBeNull()
   })
 
-  test('renders artist grid with correct count', () => {
+  test('renders all artist names', () => {
     render(<ArtistGrid artists={mockArtists} />)
 
-    expect(screen.getByText('Artists You Follow (3)')).toBeInTheDocument()
-  })
-
-  test('renders all artist information correctly', () => {
-    render(<ArtistGrid artists={mockArtists} />)
-
-    // Check artist names
     expect(screen.getByText('Artist One')).toBeInTheDocument()
     expect(screen.getByText('Artist Two')).toBeInTheDocument()
     expect(screen.getByText('Artist Three')).toBeInTheDocument()
-
-    // Check follower counts (formatted)
-    expect(screen.getByText('1,000,000 followers')).toBeInTheDocument()
-    expect(screen.getByText('500,000 followers')).toBeInTheDocument()
-    expect(screen.getByText('250,000 followers')).toBeInTheDocument()
-
-    // Check genres (first 2 only)
-    expect(screen.getByText('rock, alternative')).toBeInTheDocument()
-    expect(screen.getByText('pop, electronic')).toBeInTheDocument()
   })
 
-  test('renders artist images when available', () => {
+  test('renders follower counts formatted correctly', () => {
     render(<ArtistGrid artists={mockArtists} />)
 
-    const artistOneImage = screen.getByAltText('Artist One')
-    const artistTwoImage = screen.getByAltText('Artist Two')
+    expect(screen.getByText('1,000,000')).toBeInTheDocument()
+    expect(screen.getByText('500,000')).toBeInTheDocument()
+    expect(screen.getByText('250,000')).toBeInTheDocument()
+  })
 
-    expect(artistOneImage).toBeInTheDocument()
-    expect(artistOneImage).toHaveAttribute(
-      'src',
-      'http://example.com/artist1.jpg',
-    )
-    expect(artistTwoImage).toBeInTheDocument()
-    expect(artistTwoImage).toHaveAttribute(
-      'src',
-      'http://example.com/artist2.jpg',
-    )
+  test('renders genre badges for artists with genres', () => {
+    render(<ArtistGrid artists={mockArtists} />)
 
-    // Artist Three has no images, so no image should be rendered
-    expect(screen.queryByAltText('Artist Three')).not.toBeInTheDocument()
+    expect(screen.getByText('rock')).toBeInTheDocument()
+    expect(screen.getByText('alternative')).toBeInTheDocument()
+    expect(screen.getByText('pop')).toBeInTheDocument()
+    expect(screen.getByText('electronic')).toBeInTheDocument()
   })
 
   test('handles artists with no genres gracefully', () => {
     render(<ArtistGrid artists={mockArtists} />)
 
-    // Artist Three has no genres, so no genre text should appear for it
-    const artistThreeCard = screen.getByText('Artist Three').closest('div')
+    const artistThreeCard = screen
+      .getByText('Artist Three')
+      .closest('[data-slot="card"]')
     expect(artistThreeCard).toBeInTheDocument()
 
-    // Should still show name and followers
-    expect(screen.getByText('Artist Three')).toBeInTheDocument()
-    expect(screen.getByText('250,000 followers')).toBeInTheDocument()
+    const badges = artistThreeCard?.querySelectorAll('[data-slot="badge"]')
+    expect(badges?.length).toBe(0)
   })
 
   test('applies correct CSS classes for responsive grid', () => {
@@ -120,16 +96,29 @@ describe('ArtistGrid Component', () => {
     expect(gridContainer).toHaveClass(
       'grid',
       'grid-cols-1',
-      'md:grid-cols-2',
+      'sm:grid-cols-2',
       'lg:grid-cols-3',
+      'xl:grid-cols-4',
       'gap-4',
     )
   })
 
-  test('applies hover effects to artist cards', () => {
+  test('renders cards with hover effect classes', () => {
     render(<ArtistGrid artists={mockArtists} />)
 
-    const artistCard = screen.getByText('Artist One').closest('div')
-    expect(artistCard).toHaveClass('hover:bg-gray-200', 'transition-colors')
+    const artistCard = screen
+      .getByText('Artist One')
+      .closest('[data-slot="card"]')
+    expect(artistCard).toHaveClass('hover:bg-accent/50', 'transition-colors')
+  })
+
+  test('renders correct number of cards', () => {
+    render(<ArtistGrid artists={mockArtists} />)
+
+    const cards = screen
+      .getByText('Artist One')
+      .closest('.grid')
+      ?.querySelectorAll('[data-slot="card"]')
+    expect(cards?.length).toBe(3)
   })
 })

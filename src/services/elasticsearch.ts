@@ -6,10 +6,44 @@ const EVENTS_INDEX = 'events'
 export async function searchEvents(
   params: EventSearchParams,
 ): Promise<Event[]> {
-  const { artistNames, city, state } = params
+  const { artistNames, city, state, fromDate, timezone } = params
 
   if (artistNames.length === 0) {
     return []
+  }
+
+  const dateFilter = fromDate ?? new Date().toISOString().split('T')[0]
+
+  const filters: object[] = [
+    {
+      bool: {
+        should: [
+          { match: { city: city } },
+          { match: { state: state } },
+          { match: { state_name: city } },
+        ],
+        minimum_should_match: 1,
+      },
+    },
+    {
+      range: {
+        local_date: {
+          gte: dateFilter,
+        },
+      },
+    },
+  ]
+
+  if (timezone) {
+    filters.push({
+      bool: {
+        should: [
+          { match: { venue_timezone: timezone } },
+          { match: { event_timezone: timezone } },
+        ],
+        minimum_should_match: 1,
+      },
+    })
   }
 
   const query = {
@@ -30,22 +64,11 @@ export async function searchEvents(
             },
           },
         ],
-        filter: [
-          {
-            bool: {
-              should: [
-                { match: { city: city } },
-                { match: { state: state } },
-                { match: { state_name: city } },
-              ],
-              minimum_should_match: 1,
-            },
-          },
-        ],
+        filter: filters,
       },
     },
     size: 50,
-    sort: [{ start_date: { order: 'asc' } }],
+    sort: [{ local_date: { order: 'asc' } }, { local_time: { order: 'asc' } }],
   }
 
   const response = await fetch(`${ES_PROXY_URL}/${EVENTS_INDEX}/_search`, {

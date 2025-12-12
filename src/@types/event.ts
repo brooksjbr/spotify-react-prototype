@@ -38,6 +38,8 @@ export interface EventSearchParams {
   artistNames: string[]
   city: string
   state: string
+  fromDate?: string
+  timezone?: string
 }
 
 export interface ESSearchResponse<T> {

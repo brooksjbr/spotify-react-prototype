@@ -25,13 +25,15 @@ const setStoredEvents = (events: Event[]): void => {
 export interface UseEventsOptions {
   city?: string
   state?: string
+  fromDate?: string
+  timezone?: string
 }
 
 export const useEvents = (
   artistNames: string[] | null,
   options: UseEventsOptions = {},
 ) => {
-  const { city = 'Washington', state = 'DC' } = options
+  const { city = 'Washington', state = 'DC', fromDate, timezone } = options
 
   const [events, setEvents] = useState<Event[] | null>(() => getStoredEvents())
   const [loading, setLoading] = useState<boolean>(false)
@@ -51,6 +53,8 @@ export const useEvents = (
           artistNames,
           city,
           state,
+          fromDate,
+          timezone,
         })
         setEvents(results)
         setStoredEvents(results)
@@ -65,7 +69,7 @@ export const useEvents = (
     }
 
     fetchEvents()
-  }, [artistNames, city, state])
+  }, [artistNames, city, state, fromDate, timezone])
 
   const clearEvents = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY)
@@ -85,6 +89,8 @@ export const useEvents = (
         artistNames,
         city,
         state,
+        fromDate,
+        timezone,
       })
       setEvents(results)
       setStoredEvents(results)
@@ -96,7 +102,7 @@ export const useEvents = (
     } finally {
       setLoading(false)
     }
-  }, [artistNames, city, state])
+  }, [artistNames, city, state, fromDate, timezone])
 
   return { events, loading, error, clearEvents, refetch }
 }

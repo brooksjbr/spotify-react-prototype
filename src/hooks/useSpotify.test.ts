@@ -1,8 +1,14 @@
 import type { SpotifyApi } from '@spotify/web-api-ts-sdk'
 import { renderHook, waitFor } from '@testing-library/react'
-import { vi } from 'vitest'
+import { afterEach, beforeEach, vi } from 'vitest'
 
 import { useSpotify, useCurrentUser, useFollowedArtists } from './useSpotify'
+
+const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+afterEach(() => {
+  consoleSpy.mockClear()
+})
 
 // Mock the Spotify SDK
 const mockSpotifyApi = {
@@ -37,6 +43,7 @@ vi.mock('import.meta', () => ({
 describe('useSpotify', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    localStorage.clear()
   })
 
   test('returns null sdk initially', () => {
@@ -68,6 +75,7 @@ describe('useSpotify', () => {
 describe('useCurrentUser', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    localStorage.clear()
   })
 
   test('returns initial state when no sdk provided', () => {
@@ -121,6 +129,7 @@ describe('useCurrentUser', () => {
 describe('useFollowedArtists', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    localStorage.clear()
   })
 
   test('returns initial state when no sdk provided', () => {

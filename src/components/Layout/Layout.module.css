@@ -1,18 +1,16 @@
 .layout {
   min-height: 100vh;
   min-width: 100vw;
-  background-color: #282c34;
-  font-size: calc(10px + 2vmin);
-  color: white;
-  display: grid;
-  place-items: center;
+  display: flex;
+  justify-content: center;
 }
 
 .container {
+  width: 100%;
+  max-width: 1400px;
   min-height: 100vh;
-  min-width: 90%;
-  max-width: 90%;
+  padding: 2rem;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 1.5rem;
 }

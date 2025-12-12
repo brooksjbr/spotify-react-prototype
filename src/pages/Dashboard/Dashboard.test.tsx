@@ -1,30 +1,28 @@
 import { render, screen } from '@testing-library/react'
 import { vi } from 'vitest'
 
-import { useEvents } from '../../hooks/useEvents'
+import { useEvents } from '@/hooks/useEvents'
 import {
   useSpotify,
   useCurrentUser,
   useFollowedArtists,
   useTopArtists,
-} from '../../hooks/useSpotify'
+} from '@/hooks/useSpotify'
 
 import Dashboard from './index'
 
-// Mock the hooks
-vi.mock('../../hooks/useSpotify', () => ({
+vi.mock('@/hooks/useSpotify', () => ({
   useSpotify: vi.fn(),
   useCurrentUser: vi.fn(),
   useFollowedArtists: vi.fn(),
   useTopArtists: vi.fn(),
 }))
 
-vi.mock('../../hooks/useEvents', () => ({
+vi.mock('@/hooks/useEvents', () => ({
   useEvents: vi.fn(),
 }))
 
-// Mock the DashboardLayout component
-vi.mock('../../components/Layout/DashboardLayout/DashboardLayout', () => ({
+vi.mock('@/components/Layout/DashboardLayout/DashboardLayout', () => ({
   default: ({
     title,
     children,
@@ -39,31 +37,36 @@ vi.mock('../../components/Layout/DashboardLayout/DashboardLayout', () => ({
   ),
 }))
 
-// Mock the UserProfile component
-vi.mock('../../components/UserProfile/UserProfile', () => ({
-  default: ({ user }: { user: any }) => (
+vi.mock('@/components/UserProfile', () => ({
+  default: ({ user }: { user: { display_name: string } }) => (
     <div data-testid="user-profile">
       <span>User: {user.display_name}</span>
     </div>
   ),
 }))
 
-// Updated mock for ArtistGrid to handle empty state
-vi.mock('../../components/ArtistGrid/ArtistGrid', () => ({
-  default: ({ artists }: { artists: any[] }) => (
-    <div data-testid="artist-grid">
-      {artists.length === 0 ? (
-        <div>
-          <h2>Artists You Follow</h2>
-          <p>You're not following any artists yet.</p>
-        </div>
-      ) : (
-        <div>
-          <h2>Artists You Follow ({artists.length})</h2>
-          <span>Artists: {artists.length}</span>
-        </div>
-      )}
+vi.mock('@/components/ArtistGrid', () => ({
+  default: ({ artists }: { artists: { id: string }[] }) =>
+    artists.length > 0 ? (
+      <div data-testid="artist-grid">
+        <span>Artists: {artists.length}</span>
+      </div>
+    ) : null,
+}))
+
+vi.mock('@/components/EventCarousel', () => ({
+  default: ({ events, title }: { events: { id: string }[]; title: string }) => (
+    <div data-testid="event-carousel">
+      <span>
+        {title}: {events.length} events
+      </span>
     </div>
+  ),
+}))
+
+vi.mock('@/components/ui/skeleton', () => ({
+  Skeleton: ({ className }: { className?: string }) => (
+    <div data-testid="skeleton" className={className} />
   ),
 }))
 
@@ -91,7 +94,7 @@ describe('Dashboard Component', () => {
     mockUseEvents.mockReturnValue(defaultEventsReturn)
   })
 
-  test('shows connecting message when SDK is not available', () => {
+  test('shows skeleton loaders when SDK is not available', () => {
     mockUseSpotify.mockReturnValue({ sdk: null })
     mockUseCurrentUser.mockReturnValue({
       user: null,
@@ -108,10 +111,10 @@ describe('Dashboard Component', () => {
     render(<Dashboard />)
 
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
-    expect(screen.getByText('Connecting to Spotify...')).toBeInTheDocument()
+    expect(screen.getAllByTestId('skeleton').length).toBeGreaterThan(0)
   })
 
-  test('shows loading message when fetching user profile', () => {
+  test('shows skeleton loaders when fetching user profile', () => {
     const mockSdk = { currentUser: { profile: vi.fn() } }
     mockUseSpotify.mockReturnValue({ sdk: mockSdk })
     mockUseCurrentUser.mockReturnValue({
@@ -129,12 +132,10 @@ describe('Dashboard Component', () => {
     render(<Dashboard />)
 
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
-    expect(
-      screen.getByText('Loading your profile and artists...'),
-    ).toBeInTheDocument()
+    expect(screen.getAllByTestId('skeleton').length).toBeGreaterThan(0)
   })
 
-  test('shows loading message when fetching followed artists', () => {
+  test('shows skeleton loaders when fetching followed artists', () => {
     const mockSdk = { currentUser: { profile: vi.fn() } }
     mockUseSpotify.mockReturnValue({ sdk: mockSdk })
     mockUseCurrentUser.mockReturnValue({
@@ -152,9 +153,7 @@ describe('Dashboard Component', () => {
     render(<Dashboard />)
 
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
-    expect(
-      screen.getByText('Loading your profile and artists...'),
-    ).toBeInTheDocument()
+    expect(screen.getAllByTestId('skeleton').length).toBeGreaterThan(0)
   })
 
   test('shows user error message when there is a user error', () => {
@@ -233,7 +232,7 @@ describe('Dashboard Component', () => {
     ).toBeInTheDocument()
   })
 
-  test('renders user profile and artist grid when data is available', () => {
+  test('renders user profile and event carousel when data is available', () => {
     const mockSdk = { currentUser: { profile: vi.fn() } }
     const mockUser = {
       display_name: 'John Doe',
@@ -275,15 +274,9 @@ describe('Dashboard Component', () => {
     render(<Dashboard />)
 
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
-    expect(
-      screen.getByText('Welcome to your Spotify dashboard!'),
-    ).toBeInTheDocument()
-
-    // Check user profile is rendered
     expect(screen.getByTestId('user-profile')).toBeInTheDocument()
     expect(screen.getByText('User: John Doe')).toBeInTheDocument()
-
-    // Check artist grids are rendered (artists with matching events)
+    expect(screen.getByTestId('event-carousel')).toBeInTheDocument()
     expect(screen.getAllByTestId('artist-grid')).toHaveLength(2)
   })
 
@@ -318,12 +311,9 @@ describe('Dashboard Component', () => {
     render(<Dashboard />)
 
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
-    expect(
-      screen.getByText('Welcome to your Spotify dashboard!'),
-    ).toBeInTheDocument()
     expect(screen.getByTestId('user-profile')).toBeInTheDocument()
-    // No artist grids rendered when no events match
     expect(screen.queryByTestId('artist-grid')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('event-carousel')).not.toBeInTheDocument()
   })
 
   test('renders user profile even when artists fail to load', () => {

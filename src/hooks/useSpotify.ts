@@ -6,11 +6,32 @@ import {
 } from '@spotify/web-api-ts-sdk'
 import { useCallback, useEffect, useState } from 'react'
 
+import type { SpotifyResource } from '@/@types/extract-data'
+import { triggerSpotifyExtraction } from '@/services/extract-data'
+
 const STORAGE_KEYS = {
   USER: 'spotify_user',
   ARTISTS: 'spotify_artists',
   TOP_ARTISTS: 'spotify_top_artists',
+  EXTRACTION_TRIGGERED: 'spotify_extraction_triggered',
 } as const
+
+const SPOTIFY_TOKEN_KEY = 'spotify-sdk:AuthorizationCodeWithPKCEStrategy:token'
+
+interface AccessToken {
+  access_token: string
+  refresh_token?: string
+}
+
+function getSpotifyTokens(): AccessToken | null {
+  try {
+    const stored = localStorage.getItem(SPOTIFY_TOKEN_KEY)
+    if (!stored) return null
+    return JSON.parse(stored) as AccessToken
+  } catch {
+    return null
+  }
+}
 
 const getStoredData = <T>(key: string): T | null => {
   try {
@@ -219,4 +240,109 @@ export const useTopArtists = (
   }, [])
 
   return { topArtists, loading, error, clearTopArtists }
+}
+
+const DEFAULT_EXTRACTION_RESOURCES: SpotifyResource[] = [
+  'me',
+  'top-artists',
+  'top-tracks',
+  'saved-tracks',
+  'followed-artists',
+  'playlists',
+  'recently-played',
+]
+
+export const useSpotifyExtraction = (
+  sdk: SpotifyApi | null,
+  resources: SpotifyResource[] = DEFAULT_EXTRACTION_RESOURCES,
+  autoTrigger: boolean = false,
+) => {
+  const [extractionClientRef, setExtractionClientRef] = useState<string | null>(
+    null,
+  )
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!sdk || !autoTrigger) return
+
+    const alreadyTriggered = localStorage.getItem(
+      STORAGE_KEYS.EXTRACTION_TRIGGERED,
+    )
+    if (alreadyTriggered) return
+
+    const triggerExtraction = async () => {
+      const tokens = getSpotifyTokens()
+      if (!tokens?.access_token) return
+
+      setLoading(true)
+      setError(null)
+
+      try {
+        const result = await triggerSpotifyExtraction(
+          tokens.access_token,
+          tokens.refresh_token ?? null,
+          resources,
+          { time_range: 'medium_term' },
+        )
+        setExtractionClientRef(result.client_ref)
+        localStorage.setItem(STORAGE_KEYS.EXTRACTION_TRIGGERED, 'true')
+        console.log('Extraction started:', result.client_ref)
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Extraction failed'
+        setError(errorMessage)
+        console.error('Failed to trigger extraction:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    triggerExtraction()
+  }, [sdk, autoTrigger, resources])
+
+  const manualTrigger = useCallback(
+    async (customResources?: SpotifyResource[]) => {
+      const tokens = getSpotifyTokens()
+      if (!tokens?.access_token) {
+        throw new Error('No Spotify access token available')
+      }
+
+      setLoading(true)
+      setError(null)
+
+      try {
+        const result = await triggerSpotifyExtraction(
+          tokens.access_token,
+          tokens.refresh_token ?? null,
+          customResources ?? resources,
+          { time_range: 'medium_term' },
+        )
+        setExtractionClientRef(result.client_ref)
+        return result
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Extraction failed'
+        setError(errorMessage)
+        throw err
+      } finally {
+        setLoading(false)
+      }
+    },
+    [resources],
+  )
+
+  const clearExtraction = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEYS.EXTRACTION_TRIGGERED)
+    setExtractionClientRef(null)
+    setError(null)
+  }, [])
+
+  return {
+    extractionClientRef,
+    loading,
+    error,
+    triggerExtraction: manualTrigger,
+    clearExtraction,
+  }
 }

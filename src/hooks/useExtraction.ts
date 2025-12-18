@@ -4,11 +4,11 @@ import { useCallback, useState } from 'react'
 import type {
   OAuthExtractionResponse,
   SpotifyResource,
-  ExtractedDataItem,
+  SpotifyDataResponse,
 } from '@/@types/extract-data'
 import {
   triggerSpotifyExtraction,
-  getExtractedData,
+  getSpotifyData,
   getStoredClientRef,
   clearStoredClientRef,
 } from '@/services/extract-data'
@@ -35,9 +35,10 @@ interface UseExtractionReturn {
     resources: SpotifyResource[],
     params?: Record<string, unknown>,
   ) => Promise<OAuthExtractionResponse>
-  fetchExtractedData: <T = ExtractedDataItem>(
-    resourceType?: string,
-  ) => Promise<T[]>
+  fetchSpotifyData: (
+    userId: string,
+    dataType?: SpotifyResource,
+  ) => Promise<SpotifyDataResponse[]>
   clientRef: string | null
   loading: boolean
   error: string | null
@@ -87,28 +88,26 @@ export function useExtraction(sdk: SpotifyApi | null): UseExtractionReturn {
     [sdk],
   )
 
-  const fetchExtractedData = useCallback(
-    async <T = ExtractedDataItem>(resourceType?: string): Promise<T[]> => {
-      const ref = clientRef ?? getStoredClientRef()
-      if (!ref) {
-        throw new Error('No extraction client_ref available')
-      }
-
+  const fetchSpotifyData = useCallback(
+    async (
+      userId: string,
+      dataType?: SpotifyResource,
+    ): Promise<SpotifyDataResponse[]> => {
       setLoading(true)
       setError(null)
 
       try {
-        return await getExtractedData<T>(ref, resourceType)
+        return await getSpotifyData(userId, dataType)
       } catch (err) {
         const errorMessage =
-          err instanceof Error ? err.message : 'Failed to fetch extracted data'
+          err instanceof Error ? err.message : 'Failed to fetch Spotify data'
         setError(errorMessage)
         throw err
       } finally {
         setLoading(false)
       }
     },
-    [clientRef],
+    [],
   )
 
   const clearExtraction = useCallback(() => {
@@ -119,7 +118,7 @@ export function useExtraction(sdk: SpotifyApi | null): UseExtractionReturn {
 
   return {
     triggerExtraction,
-    fetchExtractedData,
+    fetchSpotifyData,
     clientRef,
     loading,
     error,

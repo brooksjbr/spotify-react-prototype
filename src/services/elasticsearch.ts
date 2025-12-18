@@ -1,11 +1,11 @@
-import type { Event, EventSearchParams, ESSearchResponse } from '@/@types/event'
+import type { EventSearchParams } from '@/@types/event'
 
 const ES_PROXY_URL = '/api/es'
 const EVENTS_INDEX = 'events'
 
-export async function searchEvents(
+export async function getArtistsWithEvents(
   params: EventSearchParams,
-): Promise<Event[]> {
+): Promise<string[]> {
   const { artistNames, city, state, fromDate, timezone } = params
 
   if (artistNames.length === 0) {
@@ -67,8 +67,15 @@ export async function searchEvents(
         filter: filters,
       },
     },
-    size: 50,
-    sort: [{ local_date: { order: 'asc' } }, { local_time: { order: 'asc' } }],
+    size: 0,
+    aggs: {
+      artists_with_events: {
+        terms: {
+          field: 'artist_name.keyword',
+          size: artistNames.length,
+        },
+      },
+    },
   }
 
   const response = await fetch(`${ES_PROXY_URL}/${EVENTS_INDEX}/_search`, {
@@ -85,10 +92,19 @@ export async function searchEvents(
     )
   }
 
-  const data: ESSearchResponse<Event> = await response.json()
+  interface AggregationResponse {
+    aggregations?: {
+      artists_with_events: {
+        buckets: Array<{ key: string; doc_count: number }>
+      }
+    }
+  }
 
-  return data.hits.hits.map((hit) => ({
-    ...hit._source,
-    id: hit._id,
-  }))
+  const data: AggregationResponse = await response.json()
+
+  return (
+    data.aggregations?.artists_with_events.buckets.map(
+      (bucket) => bucket.key,
+    ) ?? []
+  )
 }

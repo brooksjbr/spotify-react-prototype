@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import type { Event } from '@/@types/event'
-import { searchEvents } from '@/services/elasticsearch'
+import { getArtistsWithEvents } from '@/services/elasticsearch'
 
-const STORAGE_KEY = 'spotify_events'
+const STORAGE_KEY = 'spotify_artists_with_events'
 
-const getStoredEvents = (): Event[] | null => {
+const getStoredArtists = (): string[] | null => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     return stored ? JSON.parse(stored) : null
@@ -14,11 +13,11 @@ const getStoredEvents = (): Event[] | null => {
   }
 }
 
-const setStoredEvents = (events: Event[]): void => {
+const setStoredArtists = (artists: string[]): void => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(events))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(artists))
   } catch (error) {
-    console.error('Failed to save events to localStorage:', error)
+    console.error('Failed to save artists to localStorage:', error)
   }
 }
 
@@ -35,48 +34,13 @@ export const useEvents = (
 ) => {
   const { city = 'Washington', state = 'DC', fromDate, timezone } = options
 
-  const [events, setEvents] = useState<Event[] | null>(() => getStoredEvents())
+  const [artistsWithEvents, setArtistsWithEvents] = useState<string[] | null>(
+    () => getStoredArtists(),
+  )
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!artistNames || artistNames.length === 0) {
-      return
-    }
-
-    const fetchEvents = async () => {
-      setLoading(true)
-      setError(null)
-
-      try {
-        const results = await searchEvents({
-          artistNames,
-          city,
-          state,
-          fromDate,
-          timezone,
-        })
-        setEvents(results)
-        setStoredEvents(results)
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Unknown error occurred'
-        setError(errorMessage)
-        console.error('Events search error:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchEvents()
-  }, [artistNames, city, state, fromDate, timezone])
-
-  const clearEvents = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY)
-    setEvents(null)
-  }, [])
-
-  const refetch = useCallback(async () => {
+  const fetchArtistsWithEvents = useCallback(async () => {
     if (!artistNames || artistNames.length === 0) {
       return
     }
@@ -85,15 +49,15 @@ export const useEvents = (
     setError(null)
 
     try {
-      const results = await searchEvents({
+      const results = await getArtistsWithEvents({
         artistNames,
         city,
         state,
         fromDate,
         timezone,
       })
-      setEvents(results)
-      setStoredEvents(results)
+      setArtistsWithEvents(results)
+      setStoredArtists(results)
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error occurred'
@@ -104,5 +68,20 @@ export const useEvents = (
     }
   }, [artistNames, city, state, fromDate, timezone])
 
-  return { events, loading, error, clearEvents, refetch }
+  useEffect(() => {
+    fetchArtistsWithEvents()
+  }, [fetchArtistsWithEvents])
+
+  const clearArtistsWithEvents = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEY)
+    setArtistsWithEvents(null)
+  }, [])
+
+  return {
+    artistsWithEvents,
+    loading,
+    error,
+    clearArtistsWithEvents,
+    refetch: fetchArtistsWithEvents,
+  }
 }

@@ -2,14 +2,11 @@ import type {
   OAuthExtractionRequest,
   OAuthExtractionResponse,
   SpotifyResource,
-  ExtractedDataItem,
+  SpotifyDataResponse,
 } from '@/@types/extract-data'
 
 const EXTRACT_DATA_URL =
-  import.meta.env.VITE_EXTRACT_DATA_URL || 'http://localhost:8000'
-
-const ES_PROXY_URL = '/api/es'
-const EXTRACT_DATA_INDEX = 'extract-data'
+  import.meta.env.VITE_EXTRACT_DATA_URL || 'http://localhost:5150'
 
 export const STORAGE_KEYS = {
   EXTRACTION_CLIENT_REF: 'extraction_client_ref',
@@ -51,39 +48,32 @@ export async function triggerSpotifyExtraction(
   return result
 }
 
-export async function getExtractedData<T = ExtractedDataItem>(
-  clientRef: string,
-  resourceType?: string,
-): Promise<T[]> {
-  const query = {
-    query: {
-      bool: {
-        must: [
-          { term: { _client_ref: clientRef } },
-          ...(resourceType ? [{ term: { type: resourceType } }] : []),
-        ],
-      },
-    },
-    size: 1000,
+export async function getSpotifyData(
+  userId: string,
+  dataType?: SpotifyResource,
+): Promise<SpotifyDataResponse[]> {
+  const params = new URLSearchParams()
+  if (dataType) {
+    params.set('data_type', dataType)
   }
 
-  const response = await fetch(
-    `${ES_PROXY_URL}/${EXTRACT_DATA_INDEX}/_search`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(query),
+  const url = `${EXTRACT_DATA_URL}/spotify/data/${userId}${
+    params.toString() ? `?${params}` : ''
+  }`
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
     },
-  )
+  })
 
   if (!response.ok) {
-    throw new Error(
-      `ES search failed: ${response.status} ${response.statusText}`,
-    )
+    const error = await response.json()
+    throw new Error(error.detail || 'Failed to fetch Spotify data')
   }
 
-  const result = await response.json()
-  return result.hits.hits.map((hit: { _source: T }) => hit._source)
+  return response.json()
 }
 
 export function getStoredClientRef(): string | null {

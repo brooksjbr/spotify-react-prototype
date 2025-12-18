@@ -22,10 +22,40 @@ export type SpotifyResource =
   | 'saved-albums'
   | 'followed-artists'
   | 'playlists'
-  | 'recently-played'
 
-export interface ExtractedDataItem {
-  _client_ref: string
-  type: string
-  [key: string]: unknown
+export interface SpotifyDataResponse {
+  user_id: string
+  data_type: string
+  payload: unknown
+  updated_at: string
+}
+
+export interface SpotifyArtistPayload {
+  items: Array<{
+    name: string
+    id: string
+    [key: string]: unknown
+  }>
+}
+
+export function extractArtistNames(data: SpotifyDataResponse[]): string[] {
+  const names = new Set<string>()
+
+  for (const item of data) {
+    if (
+      item.data_type === 'top-artists' ||
+      item.data_type === 'followed-artists'
+    ) {
+      const payload = item.payload as SpotifyArtistPayload
+      if (payload?.items) {
+        for (const artist of payload.items) {
+          if (artist.name) {
+            names.add(artist.name)
+          }
+        }
+      }
+    }
+  }
+
+  return Array.from(names)
 }

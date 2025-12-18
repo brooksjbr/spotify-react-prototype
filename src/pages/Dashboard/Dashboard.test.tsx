@@ -69,6 +69,8 @@ describe('Dashboard Component', () => {
         href: 'https://api.spotify.com/v1/users/123',
         type: 'user',
         external_urls: { spotify: 'https://open.spotify.com/user/123' },
+        explicit_content: { filter_enabled: false, filter_locked: false },
+        product: 'premium',
       },
       loading: false,
       error: null,

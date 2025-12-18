@@ -10,6 +10,14 @@ vi.mock('@/hooks/useSpotify', () => ({
     loading: false,
     error: null,
   })),
+  useSpotifyExtraction: vi.fn(() => ({
+    extractedData: [],
+    loading: false,
+    error: null,
+    extractionClientRef: null,
+    triggerExtraction: vi.fn(),
+    clearExtraction: vi.fn(),
+  })),
 }))
 
 import { useCurrentUser } from '@/hooks/useSpotify'

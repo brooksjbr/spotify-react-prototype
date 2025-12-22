@@ -20,6 +20,16 @@ vi.mock('@/hooks/useSpotify', () => ({
   })),
 }))
 
+vi.mock('@/hooks/useEvents', () => ({
+  useEvents: vi.fn(() => ({
+    events: null,
+    loading: false,
+    error: null,
+    clearEvents: vi.fn(),
+    refetch: vi.fn(),
+  })),
+}))
+
 import { useCurrentUser } from '@/hooks/useSpotify'
 
 const mockUseCurrentUser = vi.mocked(useCurrentUser)

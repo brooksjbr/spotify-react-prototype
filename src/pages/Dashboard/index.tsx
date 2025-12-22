@@ -1,6 +1,9 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 
+import { extractArtistNames } from '@/@types/extract-data'
+import EventCarousel from '@/components/EventCarousel/EventCarousel'
 import UserProfile from '@/components/UserProfile/UserProfile'
+import { useEventsByCity } from '@/hooks/useEventsByCity'
 import {
   useSpotify,
   useCurrentUser,
@@ -8,6 +11,8 @@ import {
 } from '@/hooks/useSpotify'
 
 const Dashboard: React.FC = () => {
+  console.log('localStorage keys:', Object.keys(localStorage))
+  console.log('', localStorage.getItem('spotify_extracted_data'))
   const { sdk } = useSpotify()
   const { user, loading: userLoading, error: userError } = useCurrentUser(sdk)
   const {
@@ -16,8 +21,22 @@ const Dashboard: React.FC = () => {
     error: extractionError,
   } = useSpotifyExtraction(sdk, undefined, !!user)
 
-  const loading = userLoading || extractionLoading
-  const error = userError || extractionError
+  const artistNames = useMemo(
+    () => extractArtistNames(extractedData),
+    [extractedData],
+  )
+
+  const {
+    events,
+    loading: eventsLoading,
+    error: eventsError,
+  } = useEventsByCity(artistNames.length > 0 ? artistNames : null, {
+    cities: ['Washington'],
+    states: ['DC'],
+  })
+
+  const loading = userLoading || extractionLoading || eventsLoading
+  const error = userError || extractionError || eventsError
 
   if (loading) {
     return <div className="p-6">Loading...</div>
@@ -34,9 +53,9 @@ const Dashboard: React.FC = () => {
   return (
     <div className="p-6">
       <UserProfile user={user} />
-      {extractedData.length > 0 && (
-        <div className="mt-4 text-sm text-muted-foreground">
-          {extractedData.length} data items extracted
+      {events && (
+        <div className="mt-6">
+          <EventCarousel events={events} title="Upcoming Events" />
         </div>
       )}
     </div>

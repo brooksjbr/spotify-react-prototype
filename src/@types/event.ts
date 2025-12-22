@@ -34,6 +34,14 @@ export interface Event {
   provider?: string
 }
 
+export interface EventSearchByCity {
+  artistNames: string[]
+  cities: string[]
+  states: string[]
+  fromDate?: string
+  timezone?: string
+}
+
 export interface EventSearchParams {
   artistNames: string[]
   city: string

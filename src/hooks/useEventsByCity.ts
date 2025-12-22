@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { Event } from '@/@types/event'
-import { getEvents } from '@/services/elasticsearch'
+import { getEventsByCity } from '@/services/elasticsearch'
 
-const STORAGE_KEY = 'spotify_events'
+const STORAGE_KEY = 'spotify_events_by_city'
+const DEFAULT_CITIES = ['Washington']
+const DEFAULT_STATES = ['DC']
 
 const getStoredEvents = (): Event[] | null => {
   try {
@@ -22,25 +24,38 @@ const setStoredEvents = (events: Event[]): void => {
   }
 }
 
-export interface UseEventsOptions {
-  city?: string
-  state?: string
+export interface UseEventsByCityOptions {
+  cities?: string[]
+  states?: string[]
   fromDate?: string
   timezone?: string
 }
 
-export const useEvents = (
+export const useEventsByCity = (
   artistNames: string[] | null,
-  options: UseEventsOptions = {},
+  options: UseEventsByCityOptions = {},
 ) => {
-  const { city = 'Washington', state = 'DC', fromDate, timezone } = options
+  const { cities, states, fromDate, timezone } = options
+
+  const stableCities = useMemo(
+    () => cities ?? DEFAULT_CITIES,
+    [JSON.stringify(cities)],
+  )
+  const stableStates = useMemo(
+    () => states ?? DEFAULT_STATES,
+    [JSON.stringify(states)],
+  )
+  const stableArtistNames = useMemo(
+    () => artistNames,
+    [JSON.stringify(artistNames)],
+  )
 
   const [events, setEvents] = useState<Event[] | null>(() => getStoredEvents())
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
   const fetchEvents = useCallback(async () => {
-    if (!artistNames || artistNames.length === 0) {
+    if (!stableArtistNames || stableArtistNames.length === 0) {
       return
     }
 
@@ -48,24 +63,25 @@ export const useEvents = (
     setError(null)
 
     try {
-      const results = await getEvents({
-        artistNames,
-        city,
-        state,
+      const events = await getEventsByCity({
+        artistNames: stableArtistNames,
+        cities: stableCities,
+        states: stableStates,
         fromDate,
         timezone,
       })
-      setEvents(results)
-      setStoredEvents(results)
+
+      setEvents(events)
+      setStoredEvents(events)
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error occurred'
       setError(errorMessage)
-      console.error('Events search error:', error)
+      console.error('Events by city search error:', error)
     } finally {
       setLoading(false)
     }
-  }, [artistNames, city, state, fromDate, timezone])
+  }, [stableArtistNames, stableCities, stableStates, fromDate, timezone])
 
   useEffect(() => {
     fetchEvents()

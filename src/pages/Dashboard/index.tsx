@@ -11,8 +11,6 @@ import {
 } from '@/hooks/useSpotify'
 
 const Dashboard: React.FC = () => {
-  console.log('localStorage keys:', Object.keys(localStorage))
-  console.log('', localStorage.getItem('spotify_extracted_data'))
   const { sdk } = useSpotify()
   const { user, loading: userLoading, error: userError } = useCurrentUser(sdk)
   const {
@@ -31,8 +29,8 @@ const Dashboard: React.FC = () => {
     loading: eventsLoading,
     error: eventsError,
   } = useEventsByCity(artistNames.length > 0 ? artistNames : null, {
-    cities: ['Washington'],
-    states: ['DC'],
+    cities: [],
+    states: ['DC', 'MD', 'VA'],
   })
 
   const loading = userLoading || extractionLoading || eventsLoading

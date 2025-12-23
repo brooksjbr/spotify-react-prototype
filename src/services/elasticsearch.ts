@@ -11,68 +11,80 @@ const EVENTS_INDEX = 'events'
 export async function getEventsByCity(
   params: EventSearchByCity,
 ): Promise<Event[]> {
-  const { artistNames, cities, states, fromDate } = params
+  const { artistNames, states } = params
 
   if (artistNames.length === 0) {
     return []
   }
 
-  const dateFilter = fromDate ?? new Date().toISOString().split('T')[0]
+  // const dateFilter = fromDate ?? new Date().toISOString().split('T')[0]
 
-  const locationShould: object[] = []
+  // const locationShould: object[] = []
 
-  cities.forEach((city, index) => {
-    const state = states[index]
-    if (state) {
-      locationShould.push({
-        bool: {
-          must: [
-            { match: { city: { query: city } } },
-            {
-              bool: {
-                should: [
-                  { match: { state: { query: state } } },
-                  { match: { state_name: { query: state } } },
-                ],
-                minimum_should_match: 1,
-              },
-            },
-          ],
-        },
-      })
-    } else {
-      locationShould.push({
-        match: { city: { query: city } },
-      })
-    }
-  })
-
-  const filters: object[] = [
-    {
-      range: {
-        local_date: {
-          gte: dateFilter,
-        },
-      },
-    },
-  ]
-
-  if (locationShould.length > 0) {
+  // cities.forEach((city, index) => {
+  //   const state = states[index]
+  //   if (state) {
+  //     locationShould.push({
+  //       bool: {
+  //         must: [
+  //           { match: { city: { query: city } } },
+  //           {
+  //             bool: {
+  //               should: [
+  //                 { match: { state: { query: state } } },
+  //                 { match: { state_name: { query: state } } },
+  //               ],
+  //               minimum_should_match: 1,
+  //             },
+  //           },
+  //         ],
+  //       },
+  //     })
+  //   } else {
+  //     locationShould.push({
+  //       match: { city: { query: city } },
+  //     })
+  //   }
+  // })
+  const filters: object[] = []
+  if (states && states.length > 0) {
     filters.push({
-      bool: {
-        should: locationShould,
-        minimum_should_match: 1,
-      },
+      terms: { state: states },
     })
   }
+
+  filters.push({
+    range: {
+      start_date: {
+        gte: 'now/d',
+      },
+    },
+  })
+
+  const artistShould = artistNames.map((name) => {
+    const wordCount = name.trim().split(/\s+/).length
+    const isShort = name.length <= 5
+
+    if (isShort && wordCount === 1) {
+      // Short single-word: exact match only
+      return { term: { 'artist_name.keyword': name } }
+    } else if (wordCount > 1) {
+      // Multi-word: use match_phrase
+      return { match_phrase: { artist_name: { query: name, slop: 1 } } }
+    } else {
+      // Longer single-word: fuzzy match
+      return { match: { artist_name: { query: name, fuzziness: '1' } } }
+    }
+  })
 
   const query = {
     query: {
       bool: {
         must: [
           {
-            terms: {
-              'artist_name.keyword': artistNames,
+            bool: {
+              should: artistShould,
+              minimum_should_match: 1,
             },
           },
         ],

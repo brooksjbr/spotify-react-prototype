@@ -24,4 +24,9 @@ export default defineConfig([
         },
     },
     ...tsPrefixer,
+    {
+        rules: {
+            'prettier/prettier': ['warn', {}, { usePrettierrc: true }],
+        },
+    },
 ])

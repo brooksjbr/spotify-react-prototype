@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import { extractArtistNames } from '@/@types/extract-data'
 import EventCarousel from '@/components/EventCarousel/EventCarousel'
 import UserProfile from '@/components/UserProfile/UserProfile'
-import { useEventsByCity } from '@/hooks/useEventsByCity'
+import { useEventsByMetroCluster } from '@/hooks/useEventsByMetroCluster'
 import {
     useSpotify,
     useCurrentUser,
@@ -28,9 +28,9 @@ const Dashboard: React.FC = () => {
         events,
         loading: eventsLoading,
         error: eventsError,
-    } = useEventsByCity(artistNames.length > 0 ? artistNames : null, {
-        cities: [],
-        states: ['DC', 'MD', 'VA'],
+    } = useEventsByMetroCluster({
+        artistNames: artistNames,
+        metro_cluster: ['dc_core', 'dc_extended'],
     })
 
     const loading = userLoading || extractionLoading || eventsLoading

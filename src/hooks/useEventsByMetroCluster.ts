@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import type { Event } from '@/@types/event'
-import { getEventsByCity } from '@/services/elasticsearch'
+import type { Event, EventSearchByMetroCluster } from '@/@types/event'
+import { getEventsByMetroCluster } from '@/services/elasticsearch'
 
-const STORAGE_KEY = 'spotify_events_by_city'
-const DEFAULT_CITIES = ['Washington']
-const DEFAULT_STATES = ['DC']
+const STORAGE_KEY = 'spotify_events_by_metro_cluster'
 
 const getStoredEvents = (): Event[] | null => {
     try {
@@ -24,30 +22,16 @@ const setStoredEvents = (events: Event[]): void => {
     }
 }
 
-export interface UseEventsByCityOptions {
-    cities?: string[]
-    states?: string[]
-    fromDate?: string
-    timezone?: string
-}
+export const useEventsByMetroCluster = (params: EventSearchByMetroCluster) => {
+    const { artistNames, metro_cluster, fromDate, timezone } = params
 
-export const useEventsByCity = (
-    artistNames: string[] | null,
-    options: UseEventsByCityOptions = {},
-) => {
-    const { cities, states, fromDate, timezone } = options
-
-    const stableCities = useMemo(
-        () => cities ?? DEFAULT_CITIES,
-        [JSON.stringify(cities)],
-    )
-    const stableStates = useMemo(
-        () => states ?? DEFAULT_STATES,
-        [JSON.stringify(states)],
-    )
     const stableArtistNames = useMemo(
         () => artistNames,
         [JSON.stringify(artistNames)],
+    )
+    const stableMetroCluster = useMemo(
+        () => metro_cluster,
+        [JSON.stringify(metro_cluster)],
     )
 
     const [events, setEvents] = useState<Event[] | null>(null)
@@ -68,10 +52,9 @@ export const useEventsByCity = (
         setError(null)
 
         try {
-            const events = await getEventsByCity({
+            const events = await getEventsByMetroCluster({
                 artistNames: stableArtistNames,
-                cities: stableCities,
-                states: stableStates,
+                metro_cluster: stableMetroCluster,
                 fromDate,
                 timezone,
             })
@@ -88,7 +71,7 @@ export const useEventsByCity = (
         } finally {
             setLoading(false)
         }
-    }, [stableArtistNames, stableCities, stableStates, fromDate, timezone])
+    }, [stableArtistNames, stableMetroCluster, fromDate, timezone])
 
     useEffect(() => {
         fetchEvents()

@@ -3,10 +3,95 @@ import type {
     EventSearchParams,
     ESSearchResponse,
     EventSearchByCity,
+    EventSearchByMetroCluster,
 } from '@/@types/event'
 
 const ES_PROXY_URL = '/api/es'
 const EVENTS_INDEX = 'events'
+
+export async function getEventsByMetroCluster(
+    params: EventSearchByMetroCluster,
+): Promise<Event[]> {
+    const { artistNames, metro_cluster } = params
+
+    if (artistNames.length === 0) {
+        return []
+    }
+
+    const filters: object[] = []
+    if (metro_cluster && metro_cluster.length > 0) {
+        filters.push({
+            terms: {
+                metro_cluster: metro_cluster,
+            },
+        })
+    } else {
+        return []
+    }
+
+    const artistShould = artistNames.map((name) => {
+        const wordCount = name.trim().split(/\s+/).length
+        const isShort = name.length <= 5
+
+        if (isShort && wordCount === 1) {
+            // Short single-word: exact match only
+            return { term: { 'artist_name.keyword': name } }
+        } else if (wordCount > 1) {
+            // Multi-word: use match_phrase
+            return { match_phrase: { artist_name: { query: name, slop: 1 } } }
+        } else {
+            // Longer single-word: fuzzy match
+            return { match: { artist_name: { query: name, fuzziness: '1' } } }
+        }
+    })
+
+    filters.push({
+        range: {
+            start_date: {
+                gte: 'now/d',
+            },
+        },
+    })
+
+    const query = {
+        query: {
+            bool: {
+                must: [
+                    {
+                        bool: {
+                            should: artistShould,
+                            minimum_should_match: 1,
+                        },
+                    },
+                ],
+                filter: filters,
+            },
+        },
+        size: 500,
+        sort: [{ local_date: 'asc' }],
+    }
+
+    const response = await fetch(`${ES_PROXY_URL}/${EVENTS_INDEX}/_search`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(query),
+    })
+
+    if (!response.ok) {
+        throw new Error(
+            `ES search failed: ${response.status} ${response.statusText}`,
+        )
+    }
+
+    const data: ESSearchResponse<Event> = await response.json()
+
+    return data.hits.hits.map((hit) => ({
+        ...hit._source,
+        id: hit._id,
+    }))
+}
 
 export async function getEventsByCity(
     params: EventSearchByCity,

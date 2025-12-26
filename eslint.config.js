@@ -3,25 +3,25 @@ import tsPrefixer from 'eslint-config-ts-prefixer'
 import reactHooks from 'eslint-plugin-react-hooks'
 
 export default defineConfig([
-  {
-    ignores: [
-      '**/.vscode',
-      '**/node_modules',
-      '**/build',
-      '**/dist',
-      '**/.github',
-      '**/.idea',
-      'public/mockServiceWorker.js',
-    ],
-  },
-  {
-    plugins: {
-      'react-hooks': reactHooks,
+    {
+        ignores: [
+            '**/.vscode',
+            '**/node_modules',
+            '**/build',
+            '**/dist',
+            '**/.github',
+            '**/.idea',
+            'public/mockServiceWorker.js',
+        ],
     },
+    {
+        plugins: {
+            'react-hooks': reactHooks,
+        },
 
-    rules: {
-      'react-hooks/rules-of-hooks': 'error',
+        rules: {
+            'react-hooks/rules-of-hooks': 'error',
+        },
     },
-  },
-  ...tsPrefixer,
+    ...tsPrefixer,
 ])

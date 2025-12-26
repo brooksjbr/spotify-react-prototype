@@ -6,30 +6,30 @@ import Index from './pages/Index'
 import Notfound from './pages/Notfound'
 
 const router = createBrowserRouter([
-  {
-    path: '/',
-    element: (
-      <Layout>
-        <Index />
-      </Layout>
-    ),
-  },
-  {
-    path: '/dashboard',
-    element: (
-      <Layout>
-        <Dashboard />
-      </Layout>
-    ),
-  },
-  {
-    path: '*',
-    element: (
-      <Layout>
-        <Notfound />
-      </Layout>
-    ),
-  },
+    {
+        path: '/',
+        element: (
+            <Layout>
+                <Index />
+            </Layout>
+        ),
+    },
+    {
+        path: '/dashboard',
+        element: (
+            <Layout>
+                <Dashboard />
+            </Layout>
+        ),
+    },
+    {
+        path: '*',
+        element: (
+            <Layout>
+                <Notfound />
+            </Layout>
+        ),
+    },
 ])
 
 export default router

@@ -1,16 +1,16 @@
 .layout {
-  min-height: 100vh;
-  min-width: 100vw;
-  display: flex;
-  justify-content: center;
+    min-height: 100vh;
+    min-width: 100vw;
+    display: flex;
+    justify-content: center;
 }
 
 .container {
-  width: 100%;
-  max-width: 1400px;
-  min-height: 100vh;
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+    width: 100%;
+    max-width: 1400px;
+    min-height: 100vh;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 }

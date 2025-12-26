@@ -4,30 +4,30 @@ import EnvironmentPlugin from 'vite-plugin-environment'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig(async () => {
-  const tailwindPostcss = await import('@tailwindcss/postcss')
+    const tailwindPostcss = await import('@tailwindcss/postcss')
 
-  return {
-    plugins: [
-      EnvironmentPlugin({
-        REACT_APP_TEXT: 'My Spotify Listening Habits',
-      }) as any,
-    ],
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, './src'),
-      },
-    },
-    css: {
-      postcss: {
-        plugins: [tailwindPostcss.default],
-      },
-    },
-    test: {
-      environment: 'jsdom',
-      globals: true,
-      setupFiles: ['./src/setupTests.ts'],
-      include: ['src/**/*.{test,spec}.{ts,tsx}'],
-      exclude: ['src/@types', 'node_modules'],
-    },
-  }
+    return {
+        plugins: [
+            EnvironmentPlugin({
+                REACT_APP_TEXT: 'My Spotify Listening Habits',
+            }) as any,
+        ],
+        resolve: {
+            alias: {
+                '@': path.resolve(__dirname, './src'),
+            },
+        },
+        css: {
+            postcss: {
+                plugins: [tailwindPostcss.default],
+            },
+        },
+        test: {
+            environment: 'jsdom',
+            globals: true,
+            setupFiles: ['./src/setupTests.ts'],
+            include: ['src/**/*.{test,spec}.{ts,tsx}'],
+            exclude: ['src/@types', 'node_modules'],
+        },
+    }
 })

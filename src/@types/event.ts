@@ -37,6 +37,7 @@ export interface Event {
 export interface EventSearchByMetroCluster {
     artistNames: string[]
     metro_cluster: string[]
+    coordinates?: string
     fromDate?: string
     timezone?: string
 }

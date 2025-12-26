@@ -1,5 +1,6 @@
 import { defineConfig } from 'eslint/config'
 import tsPrefixer from 'eslint-config-ts-prefixer'
+import prettier from 'eslint-plugin-prettier'
 import reactHooks from 'eslint-plugin-react-hooks'
 
 export default defineConfig([
@@ -24,4 +25,12 @@ export default defineConfig([
         },
     },
     ...tsPrefixer,
+    {
+        plugins: {
+            prettier: prettier,
+        },
+        rules: {
+            'prettier/prettier': ['warn', {}, { usePrettierrc: true }],
+        },
+    },
 ])

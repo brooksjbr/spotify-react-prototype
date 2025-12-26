@@ -34,9 +34,15 @@ export interface Event {
     provider?: string
 }
 
+export interface MetroClusterWeight {
+    cluster: string
+    weight: number
+}
+
 export interface EventSearchByMetroCluster {
     artistNames: string[]
-    metro_cluster: string[]
+    metro_cluster: MetroClusterWeight[]
+    coordinates?: { lat: number; lon: number }
     fromDate?: string
     timezone?: string
 }

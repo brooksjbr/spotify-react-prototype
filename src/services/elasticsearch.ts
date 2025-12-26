@@ -12,20 +12,13 @@ const EVENTS_INDEX = 'events'
 export async function getEventsByMetroCluster(
     params: EventSearchByMetroCluster,
 ): Promise<Event[]> {
-    const { artistNames, metro_cluster } = params
+    const { artistNames, metro_cluster, coordinates } = params
 
     if (artistNames.length === 0) {
         return []
     }
 
-    const filters: object[] = []
-    if (metro_cluster && metro_cluster.length > 0) {
-        filters.push({
-            terms: {
-                metro_cluster: metro_cluster,
-            },
-        })
-    } else {
+    if (!metro_cluster || metro_cluster.length === 0) {
         return []
     }
 
@@ -34,37 +27,65 @@ export async function getEventsByMetroCluster(
         const isShort = name.length <= 5
 
         if (isShort && wordCount === 1) {
-            // Short single-word: exact match only
             return { term: { 'artist_name.keyword': name } }
         } else if (wordCount > 1) {
-            // Multi-word: use match_phrase
             return { match_phrase: { artist_name: { query: name, slop: 1 } } }
         } else {
-            // Longer single-word: fuzzy match
             return { match: { artist_name: { query: name, fuzziness: '1' } } }
         }
     })
 
-    filters.push({
-        range: {
-            start_date: {
-                gte: 'now/d',
+    const clusterFilters = metro_cluster.map((mc) => mc.cluster)
+
+    const functions: object[] = metro_cluster.map((mc) => ({
+        filter: { term: { metro_cluster: mc.cluster } },
+        weight: mc.weight,
+    }))
+
+    if (coordinates) {
+        functions.push({
+            gauss: {
+                coordinates: {
+                    origin: `${coordinates.lat},${coordinates.lon}`,
+                    scale: '20mi',
+                    decay: 0.5,
+                },
             },
-        },
-    })
+        })
+    }
 
     const query = {
         query: {
-            bool: {
-                must: [
-                    {
-                        bool: {
-                            should: artistShould,
-                            minimum_should_match: 1,
-                        },
+            function_score: {
+                query: {
+                    bool: {
+                        must: [
+                            {
+                                bool: {
+                                    should: artistShould,
+                                    minimum_should_match: 1,
+                                },
+                            },
+                        ],
+                        filter: [
+                            {
+                                terms: {
+                                    metro_cluster: clusterFilters,
+                                },
+                            },
+                            {
+                                range: {
+                                    start_date: {
+                                        gte: 'now/d',
+                                    },
+                                },
+                            },
+                        ],
                     },
-                ],
-                filter: filters,
+                },
+                functions,
+                score_mode: 'sum',
+                boost_mode: 'multiply',
             },
         },
         size: 500,

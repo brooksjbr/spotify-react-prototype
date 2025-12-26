@@ -30,7 +30,11 @@ const Dashboard: React.FC = () => {
         error: eventsError,
     } = useEventsByMetroCluster({
         artistNames: artistNames,
-        metro_cluster: ['dc_core', 'dc_extended'],
+        metro_cluster: [
+            { cluster: 'dc_core', weight: 1.5 },
+            { cluster: 'dc_extended', weight: 1.0 },
+        ],
+        coordinates: { lat: 38.9072, lon: -77.0369 },
     })
 
     const loading = userLoading || extractionLoading || eventsLoading

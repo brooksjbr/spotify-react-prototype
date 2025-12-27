@@ -21,6 +21,21 @@ export async function getEventsByMetroCluster(
     if (!metro_cluster || metro_cluster.length === 0) {
         return []
     }
+    const excludePatterns = [
+        'tribute',
+        'tribute to',
+        'salute to',
+        'music of',
+        'songs of',
+        'cover band',
+        'covers',
+        'dance party',
+        'disco',
+        'karaoke',
+        'singalong',
+        'experience',
+        'celebration of',
+    ]
 
     const artistShould = artistNames.map((name) => {
         const wordCount = name.trim().split(/\s+/).length
@@ -64,6 +79,17 @@ export async function getEventsByMetroCluster(
                                 bool: {
                                     should: artistShould,
                                     minimum_should_match: 1,
+                                    must_not: [
+                                        {
+                                            multi_match: {
+                                                query: excludePatterns.join(
+                                                    ' ',
+                                                ),
+                                                fields: ['event_name^2'],
+                                                operator: 'or',
+                                            },
+                                        },
+                                    ],
                                 },
                             },
                         ],
